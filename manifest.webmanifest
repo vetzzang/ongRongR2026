@@ -1,0 +1,17 @@
+{
+  "name": "옹알옹알 — 어학 찍찍이",
+  "short_name": "옹알옹알",
+  "description": "문장 단위로 반복해 듣는 어학 플레이어. 인터넷 없이 동작합니다.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0d1117",
+  "theme_color": "#0d1117",
+  "lang": "ko",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
