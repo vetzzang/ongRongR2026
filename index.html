@@ -4,17 +4,18 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
 <meta name="theme-color" content="#0d1117">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="favicon-64.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<link rel="manifest" href="manifest.webmanifest">
-<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <title>옹알옹알</title>
 <style>
   :root{
-    --bg:#0d1117; --panel:#161c27; --panel2:#1c2331; --line:#252d3d;
+    --bg:#0d1117; --panel:#202838; --panel2:#2a3446; --line:#2b3546;
     --ink:#e8edf5; --dim:#79839a; --dim2:#4d566b;
-    --green:#3fd39b; --grey:#525c70; --next:#3b4459; --nextInk:#aab4c8;
+    --green:#3fd39b; --grey:#525c70; --next:#31394b; --nextInk:#9aa6bb;
     --danger:#e2686d;
     --safeb: env(safe-area-inset-bottom, 0px);
     --safet: env(safe-area-inset-top, 0px);
@@ -43,7 +44,7 @@
   #app{height:100%;display:flex;flex-direction:column;padding-top:var(--safet);}
 
   /* toolbar */
-  .bar{display:flex;gap:8px;align-items:center;padding:10px 12px 8px;}
+  .bar{display:flex;gap:8px;align-items:center;justify-content:space-between;padding:10px 12px 8px;}
   .tb{flex:0 0 auto;height:44px;width:44px;min-width:44px;border-radius:14px;background:var(--panel);
       display:grid;place-items:center;padding:0;transition:background .15s,transform .1s;}
   .tb:active{transform:scale(.94);background:var(--panel2);}
@@ -55,8 +56,8 @@
   #fBack svg,#sBack svg{transform:scale(1.02)}
   #fAdd  svg{transform:scale(1.06)}
   .tb .badge{position:absolute;font-size:9px}
-  .spd{flex:1 1 auto;height:44px;border-radius:14px;background:var(--panel);
-       display:flex;align-items:center;justify-content:space-between;padding:0 6px;max-width:170px;margin:0 auto}
+  .spd{flex:0 1 170px;min-width:112px;max-width:170px;height:44px;border-radius:14px;background:var(--panel);
+       display:flex;align-items:center;justify-content:space-between;padding:0 6px;margin:0}
   .spd button{width:34px;height:38px;display:grid;place-items:center;border-radius:10px}
   .spd button:active{background:var(--panel2)}
   .spd svg{width:22px;height:22px;stroke:var(--dim);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
@@ -65,7 +66,7 @@
   /* waveforms */
   .waves{padding:0 12px;}
   .wrap{position:relative;border-radius:10px;overflow:hidden;background:#05080d;}
-  #wOver{height:52px;touch-action:none;cursor:grab} #wZoom{height:78px} #wRhy{height:92px}
+  #wOver{height:52px;touch-action:none;cursor:grab} #wZoom{height:52px} #wRhy{height:78px}
   .wrap+.wrap{margin-top:8px}
   canvas{display:block;width:100%;height:100%}
   .times{display:flex;justify-content:space-between;padding:5px 2px 0;font-size:11.5px;color:var(--dim)}
@@ -73,7 +74,11 @@
 
   /* meta row */
   .meta{display:flex;align-items:center;gap:10px;padding:11px 14px 0;color:var(--dim);font-size:12.5px}
-  .meta .idx{color:var(--ink);font-weight:600;font-size:13px}
+  .meta .idx{color:var(--ink);font-weight:600;font-size:13px;
+    border-radius:8px;padding:4px 8px;margin-left:-8px;transition:background .15s}
+  .meta .idx:active{background:var(--panel2)}
+  .meta .idx.arm{background:var(--green);color:#0d1117;font-weight:700;
+    font-family:inherit;font-size:12.5px;padding:5px 11px}
   .meta .grow{flex:1}
   .star{width:32px;height:32px;display:grid;place-items:center;border-radius:9px}
   .star svg{width:18px;height:18px;stroke:var(--dim);fill:none;stroke-width:1.8;stroke-linejoin:round}
@@ -204,6 +209,14 @@
   #busyBar{width:190px;height:4px;border-radius:2px;background:var(--panel2);overflow:hidden}
   #busyBar i{display:block;height:100%;width:0;background:var(--green);transition:width .25s}
 
+  #newver{position:fixed;left:12px;right:12px;bottom:calc(14px + var(--safeb));
+    background:#1b2433;border:1px solid rgba(63,211,155,.35);border-radius:14px;
+    padding:12px 14px;display:none;align-items:center;gap:10px;z-index:75;
+    box-shadow:0 10px 30px rgba(0,0,0,.5)}
+  #newver.on{display:flex}
+  #newver span{flex:1;font-size:13.5px}
+  #newver button{background:var(--green);color:#0d1117;font-weight:700;font-size:13px;
+    border-radius:10px;padding:8px 15px}
   .toast{position:fixed;left:50%;bottom:calc(24px + var(--safeb));transform:translateX(-50%) translateY(14px);
     background:#232b3c;color:var(--ink);padding:11px 18px;border-radius:12px;font-size:13.5px;
     opacity:0;transition:.25s;z-index:70;pointer-events:none;max-width:86vw;text-align:center}
@@ -241,7 +254,7 @@
   </div>
 
   <div class="meta">
-    <span class="idx mono" id="sIdx">— / —</span>
+    <button class="idx mono" id="sIdx" aria-label="처음 문장으로">— / —</button>
     <span id="sLen" class="mono"></span>
     <span class="grow"></span>
     <button class="star" id="bStar" aria-label="이 문장 즐겨찾기"><svg viewBox="0 0 24 24"><path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8L3.5 9.7l5.9-.9z"/></svg></button>
@@ -326,6 +339,7 @@
 
 <div id="busy"><div class="ring"></div><div id="busyBar"><i></i></div></div>
 <div class="toast" id="toast"></div>
+<div id="newver"><span>새 버전이 있습니다</span><button id="nvGo">새로고침</button></div>
 <audio id="au" preload="auto"></audio>
 
 <script>
@@ -427,7 +441,7 @@ function autocorr(x, nfft, fft){
 function pitchAC(x, fs, o){
   const floorHz=o.floor, ceilHz=o.ceiling, dt=o.timeStep||0.01;
   const maxCand=15, silenceTh=0.03, voicingTh=0.45,
-        octaveCost=0.01, octaveJumpCost=0.35, vuvCost=0.14;
+        octaveCost=0.01, octaveJumpCost=0.35, vuvCost=0.10;
 
   const winLen = Math.round(3.0/floorHz*fs);        // 3 periods of the floor
   const nfft   = nextPow2(winLen*2);
@@ -765,17 +779,17 @@ const fmt = t => { if(!isFinite(t)||t<0)t=0;
 const fmtShort = t => { if(!isFinite(t))t=0; const m=Math.floor(t/60), s=Math.floor(t%60);
   return m+':'+String(s).padStart(2,'0'); };
 
-const ALGO_VER = 10;                       // 알고리즘 바뀌면 올림 → 저장된 분석 자동 무효화
+const ALGO_VER = 13;                       // 알고리즘 바뀌면 올림 → 저장된 분석 자동 무효화
 const HOP = 0.01;                         // 10ms 단위로 소리 크기 측정
 /* 문장 길이 설정 — t: 여기부터 문장 경계로 보는 무음 길이(초)
                     m: 이보다 긴 문장은 안쪽 숨돌림에서 한 번 더 쪼갬(초) */
-const TLEN = { short:{t:0.28,m:6}, mid:{t:0.38,m:9}, long:{t:0.60,m:14} };
+const TLEN = { short:{t:0.30,m:6,b:0.55}, mid:{t:0.38,m:9,b:1.0}, long:{t:0.50,m:14,b:1.60} };
 const tl = k => TLEN[k] || TLEN.mid;
 const SPEEDS = [0.5,0.6,0.7,0.75,0.8,0.9,1,1.1,1.25,1.5,1.75,2];
 
 const S = {                               // 앱 전체 상태
   files: [], cur: -1, sent: [], si: 0,
-  playing:false, wantPlay:false, reps:0, inGap:false, gapT:null,
+  playing:false, wantPlay:false, reps:0, inGap:false, gapT:null, endHinted:false,
   speed:1, mode:'inf', count:3, gapPct:0, tlen:'mid', pitch:1, haptic:1, wake:0,
   nextPos:{x:0.62,y:0.5}, stars:{}, ready:false, wakeLock:null
 };
@@ -796,7 +810,8 @@ const DB = (()=>{
   const wrap=r=>new Promise((res,rej)=>{ r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error); });
   return {
     open, get ok(){return ok;},
-    async putFile(f){ if(!ok)return; try{ await wrap(tx('files','readwrite').put(f)); }catch(e){} },
+    async putFile(f){ if(!ok)return; try{ await wrap(tx('files','readwrite').put(f)); }
+      catch(e){ if(e && /Quota/i.test(e.name||'')) toast('저장 공간이 부족합니다. 파일을 지워 주세요'); } },
     async delFile(id){ if(!ok)return; try{ await wrap(tx('files','readwrite').delete(id)); }catch(e){} },
     async allFiles(){ if(!ok)return []; try{ return await wrap(tx('files','readonly').getAll())||[]; }catch(e){ return []; } },
     async clear(){ if(!ok)return; try{ await wrap(tx('files','readwrite').clear()); }catch(e){} },
@@ -804,6 +819,24 @@ const DB = (()=>{
     async getKV(k){ if(!ok)return null; try{ const r=await wrap(tx('kv','readonly').get(k)); return r?r.v:null; }catch(e){ return null; } }
   };
 })();
+
+/* 파일 기록은 음원 원본까지 통째로 들고 있어 한 번 쓰는 데 수 MB가 든다.
+   재생 위치 같은 사소한 변경은 모아서 3초에 한 번만 저장한다. */
+let saveT=null; const savePend=new Set();
+function saveFileSoon(f){                    /* 자주 바뀌는 작은 값만 따로 모아 저장 */
+  if(!f) return;
+  savePend.add(f);
+  clearTimeout(saveT);
+  saveT=setTimeout(flushSaves, 3000);
+}
+function flushSaves(){
+  clearTimeout(saveT); saveT=null;
+  savePend.forEach(f=>DB.setKV('meta:'+f.id, {
+    last: f.last||0,
+    dLo: f.tone && f.tone.dLo, dHi: f.tone && f.tone.dHi
+  }));
+  savePend.clear();
+}
 
 function toast(msg){ const t=$('#toast'); t.textContent=msg; t.classList.add('on');
   clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove('on'),2100); }
@@ -825,20 +858,32 @@ async function decodeEnvelope(blob, onP){
       if(p&&p.then) p.then(res,rej); });
     try{ ac.close(); }catch(e){}
   }
-  const d = buf.getChannelData(0), sr = buf.sampleRate, dur = buf.duration;
+  const sr = buf.sampleRate, dur = buf.duration, len = buf.length;
+  /* 성조 분석에도 이 소리를 그대로 쓴다 (8kHz 로도 22kHz 와 0.3센트 차이).
+     Int16 으로 담아 메모리를 절반으로 줄인다. 30분짜리도 29MB 로 끝난다. */
+  const pcm = new Int16Array(len);
+  const ch = buf.numberOfChannels;
+  if(ch === 1){
+    const d = buf.getChannelData(0);
+    for(let i=0;i<len;i++){ const v=d[i]; pcm[i] = v<-1?-32768 : v>1?32767 : (v*32767)|0; }
+  } else {
+    const a = buf.getChannelData(0), b = buf.getChannelData(1);
+    for(let i=0;i<len;i++){ const v=(a[i]+b[i])/2; pcm[i] = v<-1?-32768 : v>1?32767 : (v*32767)|0; }
+  }
+  buf = null;                                     // 해독 결과는 바로 놓아 준다
+
   const hop = Math.max(1, Math.round(sr*HOP));
-  const n = Math.floor(d.length/hop);
+  const n = Math.floor(len/hop);
   const env = new Float32Array(n);
   for(let i=0;i<n;i++){
-    let s=0; const a=i*hop, b=a+hop;
-    for(let j=a;j<b;j++){ const v=d[j]; s+=v*v; }
-    env[i]=Math.sqrt(s/hop);
+    let s2=0; const a2=i*hop, b2=a2+hop;
+    for(let j=a2;j<b2;j++){ const v=pcm[j]/32767; s2+=v*v; }
+    env[i]=Math.sqrt(s2/hop);
     if(onP && (i&8191)===0) onP(i/n);
   }
-  return {env, dur, hop:hop/sr};
+  return {env, dur, hop:hop/sr, pcm, sr};
 }
 
-/* 무음 길이를 긴 무리 / 짧은 무리 둘로 나눈다 (로그 축에서 2-평균 군집화) */
 function twoGroups(durs){
   if(durs.length < 3) return null;
   const L = durs.map(d=>Math.log(d)).sort((a,b)=>a-b);
@@ -859,7 +904,7 @@ function twoGroups(durs){
            mid:Math.exp((cA+cB)/2), sep:(cB-cA) };
 }
 
-function detectSentences(env, hopSec, dur, target, maxLen){
+function detectSentences(env, hopSec, dur, target, maxLen, bias){
   target = target || 0.38;                            /* 문장을 자를 무음 길이(초) */
   const n = env.length;
   if(n < 20) return [{s:0,e:dur}];
@@ -917,6 +962,10 @@ function detectSentences(env, hopSec, dur, target, maxLen){
     T = breathy ? Math.max(0.22, Math.min(1.60, g.mid))          // 숨은 넘기고 문장만 자른다
                 : Math.max(0.22, Math.min(target, g.short*0.85)); // 전부 문장 경계 → 다 자른다
   }
+  /* 설정(짧게/보통/길게)은 자동으로 구한 기준선을 밀거나 당긴다.
+     짧게 = 기준선을 낮춰 더 잘게, 길게 = 높여서 더 뭉뚱그려. */
+  T = clamp(T * (bias || 1), 0.20, 2.20);
+
   let b = build(T);
   let guard = 0;
   while(guard++ < 12){                      // 결과가 터무니없을 때만 조금씩 조정
@@ -992,22 +1041,26 @@ function fixedChunks(dur){
 /* =========================================================================
    2. 파일 관리
    ========================================================================= */
+let importing=false;
 async function importFiles(list){
+  if(importing){ toast('앞선 파일을 읽는 중입니다'); return; }
   const fs = Array.from(list).filter(f=>/audio|\.mp3$|\.m4a$|\.wav$|\.ogg$/i.test(f.type+f.name));
   if(!fs.length){ toast('음원 파일이 아닙니다'); return; }
+  importing=true;
   $('#busy').classList.add('on');
   for(let k=0;k<fs.length;k++){
     const f=fs[k];
     $('#busyBar i').style.width=(k/fs.length*100).toFixed(0)+'%';
     try{
-      const {env,dur,hop} = await decodeEnvelope(f,
+      const {env,dur,hop,pcm,sr} = await decodeEnvelope(f,
         p=>{ $('#busyBar i').style.width=((k+p)/fs.length*100).toFixed(0)+'%'; });
-      const sent = detectSentences(env, hop, dur, tl(S.tlen).t, tl(S.tlen).m);
+      const sent = detectSentences(env, hop, dur, tl(S.tlen).t, tl(S.tlen).m, tl(S.tlen).b);
       const rec = { id:'f'+Date.now()+'_'+k, name:f.name, blob:f, dur, env, hop,
-                    sent, ver:ALGO_VER, tlen:S.tlen, sel:true, last:0 };
+                    pcm, psr:sr, sent, ver:ALGO_VER, tlen:S.tlen, sel:true, last:0 };
       S.files.push(rec); await DB.putFile(rec);
     }catch(e){ toast('읽을 수 없는 파일: '+f.name); }
   }
+  importing=false;
   $('#busy').classList.remove('on');
   renderFileList(); renderWheel();
   if(S.cur<0 && S.files.length) load(0);
@@ -1027,7 +1080,7 @@ function renderFileList(){
       <button class="x" aria-label="삭제"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>`;
     el.querySelector('.cb').onclick = ()=>{ f.sel=!f.sel; DB.putFile(f); renderFileList(); };
     el.querySelector('.x').onclick = async e=>{ e.stopPropagation();
-      await DB.delFile(f.id); S.files.splice(i,1);
+      await DB.delFile(f.id); DB.setKV('meta:'+f.id, null); S.files.splice(i,1);
       if(S.cur===i){ stop(); S.cur=-1; S.sent=[]; if(S.files.length) load(0); else resetUI(); }
       else if(S.cur>i) S.cur--;
       renderFileList(); renderWheel(); };
@@ -1109,9 +1162,30 @@ function markWheel(){
   });
 }
 /* 굴리기만 해서는 아무 일도 일어나지 않는다. 눌러야 그 파일을 연다. */
+/* 처음으로 되돌리기는 되돌릴 수 없는 동작이라 두 번 눌러야 실행된다.
+   3초 안에 다시 누르지 않으면 저절로 취소된다. */
+let rewindArm=false, rewindT=null;
+function armRewind(){
+  rewindArm=true; buzz(10);
+  $('#sIdx').classList.add('arm');
+  $('#sIdx').textContent='처음으로 되돌릴까요?';
+  clearTimeout(rewindT);
+  rewindT=setTimeout(()=>{ rewindArm=false; $('#sIdx').classList.remove('arm'); updateMeta(); }, 3000);
+}
+function doRewind(){
+  clearTimeout(rewindT); rewindArm=false;
+  $('#sIdx').classList.remove('arm');
+  goto(0, S.playing, true); buzz(16); toast('처음부터');
+}
+function askRewind(){
+  if(S.cur<0) return;
+  if(S.si===0){ toast('이미 처음입니다'); return; }
+  if(rewindArm) doRewind(); else armRewind();
+}
+
 function pickFile(i){
-  if(i===S.cur){ wheelScrollTo(i,true); return; }
   wheelScrollTo(i,true); buzz(12);
+  if(i===S.cur){ askRewind(); return; }   /* 이미 열려 있는 파일 → 물어본 뒤 처음으로 */
   load(i);                       /* 파형만 그리고 멈춰 있는다. 소리는 ▶ 를 눌러야 난다. */
 }
 (function(){
@@ -1156,6 +1230,9 @@ function attach(file, i, name){
 au.addEventListener('play',   ()=>{ S.playing=true;  setPlayIcon(); });
 au.addEventListener('playing',()=>{ S.playing=true;  setPlayIcon(); });
 au.addEventListener('pause',  ()=>{ if(!S.inGap){ S.playing=false; setPlayIcon(); } });
+au.addEventListener('ended', ()=>{        /* 파일 끝까지 갔는데 문장 끝을 못 잡은 경우 */
+  if(S.playing && !S.inGap) onEnd();
+});
 au.addEventListener('error',  ()=>{
   const code = au.error ? au.error.code : 0;
   if(code===4 && tryFile && tryIdx < tryList.length-1){   // 다음 형식으로 다시 시도
@@ -1225,7 +1302,10 @@ const P = {
   time(){ return P.mode==='el' ? (au.currentTime||0) : waPos(); },
   paused(){ return P.mode==='el' ? au.paused : !WA.on; },
   seek(t){ if(P.mode==='el') seekTo(t); else waSeek(t); },
-  rate(){ WA.rate = S.speed; if(WA.on) waStart();
+  rate(){ const on=WA.on;
+    if(on) WA.off = waPos();                    /* 지금 위치를 붙잡고 나서 바꿔야 되감기지 않는다 */
+    WA.rate = S.speed;
+    if(on) waStart();
     try{ au.playbackRate = S.speed;
          au.preservesPitch = !!S.pitch; au.mozPreservesPitch = !!S.pitch;
          au.webkitPreservesPitch = !!S.pitch; }catch(e){} }
@@ -1258,11 +1338,12 @@ function updateEngineText(){
                                  : '지금은 예비 방식으로 재생합니다';
 }
 
-function load(i, keepPos){
+function load(i, fromStart){
   if(i<0||i>=S.files.length) return;
   stop();
   S.cur=i; const f=S.files[i];
-  S.sent=f.sent; S.si=clamp(f.last||0,0,S.sent.length-1); S.reps=0;
+  /* 사용자가 직접 고른 파일은 듣던 자리에서, 자동으로 넘어온 파일은 처음부터. */
+  S.sent=f.sent; S.si=fromStart ? 0 : clamp(f.last||0,0,S.sent.length-1); S.reps=0;
   S.wantPlay=false;                              /* 파일을 새로 열면 저절로 나지 않는다 */
   OV.gmax=0; OV.winFor=-1; OV.drag=false;
   waStop(); WA.buf=null; WA.off=0; P.mode='el'; updateEngineText();
@@ -1307,7 +1388,7 @@ function play(){
      });
   } else { S.playing=true; setPlayIcon(); requestWake(); }
 }
-function pause(){ cache.key=''; S.wantPlay=false;
+function pause(){ cache.key=''; S.wantPlay=false; flushSaves();
   if(P.mode==='wa') waPause(); else { try{au.pause();}catch(e){} }
   S.playing=false; clearGap(); setPlayIcon(); releaseWake(); }
 function stop(){ if(P.mode==='wa') waPause(); try{au.pause();}catch(e){}
@@ -1335,18 +1416,19 @@ function goto(i, autoplay, raw){
     i=k;
   }
   if(i >= S.sent.length){                       // 파일 끝 → 다음 파일
-    if(S.cur < S.files.length-1){ const wasPlaying=S.playing||autoplay; load(S.cur+1); if(wasPlaying) play(); }
+    if(S.cur < S.files.length-1){ const wasPlaying=S.playing||autoplay; load(S.cur+1, true); if(wasPlaying) play(); }
     else { pause(); toast('마지막 문장입니다'); }
     return;
   }
   if(i < 0){                                    // 파일 처음보다 앞 → 이전 파일 끝
-    if(S.cur > 0){ const wasPlaying=S.playing||autoplay; load(S.cur-1);
+    if(S.cur > 0){ const wasPlaying=S.playing||autoplay; load(S.cur-1, true);
       S.si=S.sent.length-1; P.seek(S.sent[S.si].s); if(wasPlaying) play(); updateMeta(); }
     return;
   }
-  S.si=i; S.reps=0; clearGap();
+  S.si=i; S.reps=0; S.endHinted=false; clearGap();
+  if(rewindArm){ clearTimeout(rewindT); rewindArm=false; $('#sIdx').classList.remove('arm'); }
   P.seek(S.sent[i].s);
-  const f=S.files[S.cur]; if(f){ f.last=i; DB.putFile(f); }
+  const f=S.files[S.cur]; if(f){ f.last=i; saveFileSoon(f); }
   updateMeta(); paintAll();
   if(autoplay && !S.playing) play();
 }
@@ -1356,7 +1438,13 @@ function onEnd(){
   const c=S.sent[S.si];
   if(S.gapPct>0 && !S.inGap){ startGap(c); return; }
   clearGap();
-  if(S.mode==='inf'){ P.seek(c.s); }
+  if(S.mode==='inf'){
+    if(S.si===S.sent.length-1 && !S.endHinted){   /* 마지막 문장에서 한 번만 안내 */
+      S.endHinted=true;
+      toast('무한 반복 중입니다. 다음 파일로 가려면 반복 버튼을 바꾸세요');
+    }
+    P.seek(c.s);
+  }
   else if(S.mode==='cnt'){
     S.reps++;
     if(S.reps < S.count) P.seek(c.s);
@@ -1379,9 +1467,6 @@ function clearGap(){ if(S.gapT) clearTimeout(S.gapT); S.gapT=null; S.inGap=false
 
 /* 화면 프레임마다 위치 확인 (약 16ms 간격 → 문장 끝 오차가 매우 작음) */
 function tick(){
-  window.addEventListener('pointerdown', function unlock(){
-    try{ if(WA.ctx && WA.ctx.state==='suspended') WA.ctx.resume(); }catch(e){}
-  }, {once:false});
   requestAnimationFrame(tick);
   if(S.cur<0 || !S.sent.length) return;
   const t = P.time();
@@ -1418,48 +1503,44 @@ function toneActive(){
   return S.mode==='inf' || S.mode==='cnt' || !S.playing;
 }
 
+function toFloat(src, a, b){                 /* Int16 조각을 Float32 로 */
+  const n=b-a, out=new Float32Array(n);
+  for(let i=0;i<n;i++) out[i]=src[a+i]/32767;
+  return out;
+}
 function fakeBuf(data, sr){
   return { numberOfChannels:1, length:data.length, sampleRate:sr,
            duration:data.length/sr, getChannelData(){ return data; } };
 }
-async function decodeMono(blob, rate){
-  const arr = await blob.arrayBuffer();
-  const OAC = window.OfflineAudioContext || window.webkitOfflineAudioContext;
-  let buf=null;
-  if(OAC){ try{ buf = await new OAC(1,1,rate).decodeAudioData(arr.slice(0)); }catch(e){ buf=null; } }
-  if(!buf){
-    const AC = window.AudioContext || window.webkitAudioContext; const ac = new AC();
-    buf = await new Promise((res,rej)=>{ const q=ac.decodeAudioData(arr.slice(0),res,rej);
-      if(q&&q.then) q.then(res,rej); });
-    try{ ac.close(); }catch(e){}
-  }
-  const n=buf.length, mono=new Float32Array(n);
-  for(let c=0;c<buf.numberOfChannels;c++){ const d=buf.getChannelData(c); for(let i=0;i<n;i++) mono[i]+=d[i]; }
-  if(buf.numberOfChannels>1) for(let i=0;i<n;i++) mono[i]/=buf.numberOfChannels;
-  return {pcm:mono, sr:buf.sampleRate};
+async function ensurePcm(f){
+  if(f.pcm && f.pcm.length) return f;                    /* 이미 있으면 그대로 */
+  const d = await decodeEnvelope(f.blob);                /* 예전 버전으로 저장된 파일 대비 */
+  f.pcm = d.pcm; f.psr = d.sr;
+  DB.putFile(f);
+  return f;
 }
 
 async function toneInit(f){
   TONE.fileId=f.id; TONE.pcm=null; TONE.ready=false; TONE.cache.clear();
   try{
-    const d = await decodeMono(f.blob, 22050);
+    await ensurePcm(f);
     if(TONE.fileId!==f.id) return;
-    TONE.pcm=d.pcm; TONE.sr=d.sr;
+    TONE.pcm=f.pcm; TONE.sr=f.psr||8000;
 
     if(f.tone && f.tone.median && f.tone.v===4){ Object.assign(TONE, f.tone); }
     else{
       /* 한 군데만 보면 그 대목에 높은 1성이 없을 때 천장이 낮게 잡힌다.
          낮게 잡힌 천장은 높은 음을 절반값으로 잘못 읽게 만든다(옥타브 착오).
          그래서 앞·가운데·뒤 세 곳을 뽑아 이어 붙여 추정한다. */
-      const CH=Math.round(8*d.sr), N=d.pcm.length;
+      const SR2=TONE.sr, CH=Math.round(8*SR2), N=TONE.pcm.length;
       let ex;
-      if(N <= CH*3){ ex = d.pcm; }
+      if(N <= CH*3){ ex = toFloat(TONE.pcm, 0, N); }
       else{
         const at=[Math.floor(N*0.10), Math.floor(N*0.45), Math.floor(N*0.80)];
         ex=new Float32Array(CH*3);
-        at.forEach((st,k)=>ex.set(d.pcm.subarray(st, Math.min(N,st+CH)), CH*k));
+        at.forEach((st,k)=>ex.set(toFloat(TONE.pcm, st, Math.min(N,st+CH)), CH*k));
       }
-      const r=await ToneWave.analyze(fakeBuf(ex, d.sr), {spread:14});
+      const r=await ToneWave.analyze(fakeBuf(ex, SR2), {spread:14});
       if(TONE.fileId!==f.id) return;
       /* 추정값에 여유를 준다. 천장이 모자라면 높은 음을 통째로 놓치므로
          조금 넉넉한 쪽이 훨씬 안전하다. */
@@ -1486,14 +1567,23 @@ async function toneInit(f){
 function tidyF0(f0){
   const n=f0.length, st=(a,b)=>12*Math.log2(a/b);
 
-  for(let i=0;i<n;i++){                                   // ① 정확히 12반음 근처만
+  /* ① 배음 착오 되돌리기.
+     추적기가 진짜 기본음 대신 2배·3배·1.5배 배음을 잡는 일이 있다.
+     고친 값이 주변과 1.2반음 안으로 들어올 때만 고친다 —
+     그래야 3성 저점처럼 원래 낮은 정상 값은 건드리지 않는다. */
+  const RATIOS=[2, 3, 1.5, 4/3, 0.5, 1/3, 2/3, 0.75];
+  for(let i=0;i<n;i++){
     if(f0[i]<=0) continue;
     const v=[];
     for(let k=Math.max(0,i-4);k<=Math.min(n-1,i+4);k++) if(k!==i&&f0[k]>0) v.push(f0[k]);
     if(v.length<3) continue;
     v.sort((a,b)=>a-b);
-    const d=st(f0[i], v[Math.floor(v.length/2)]);
-    if(d>10.5 && d<13.5) f0[i]/=2; else if(d<-10.5 && d>-13.5) f0[i]*=2;
+    const m=v[Math.floor(v.length/2)];
+    if(Math.abs(st(f0[i],m)) <= 3.5) continue;
+    let best=null, bestD=1.2;
+    for(const r of RATIOS){ const cand=f0[i]*r, d=Math.abs(st(cand,m));
+      if(d<bestD){ bestD=d; best=cand; } }
+    if(best) f0[i]=best;
   }
   for(let i=1;i<n-1;i++){                                 // ② 앞뒤는 비슷한데 자기만 튄 값
     const a=f0[i-1], b=f0[i], c=f0[i+1];
@@ -1534,7 +1624,7 @@ async function toneFor(si){
     const a=Math.max(0, Math.floor((c.s-pad)*TONE.sr));
     const b=Math.min(TONE.pcm.length, Math.ceil((c.e+pad)*TONE.sr));
     if(b-a > TONE.sr*0.15){
-      const r=await ToneWave.analyze(fakeBuf(TONE.pcm.subarray(a,b), TONE.sr),
+      const r=await ToneWave.analyze(fakeBuf(toFloat(TONE.pcm,a,b), TONE.sr),
                                      {floor:TONE.range[0], ceiling:TONE.range[1],
                                       median:TONE.median, spread:14});   /* 기준은 파일 전체 */
       if(TONE.fileId===id){
@@ -1547,9 +1637,21 @@ async function toneFor(si){
           if(mn < TONE.dLo){ TONE.dLo = Math.max(TONE.range[0], mn*0.97); grew=true; }
           if(mx > TONE.dHi){ TONE.dHi = Math.min(TONE.range[1], mx*1.03); grew=true; }
           const f=S.files[S.cur];
-          if(grew && f && f.tone){ f.tone.dLo=TONE.dLo; f.tone.dHi=TONE.dHi; DB.putFile(f); }
+          if(grew && f && f.tone){ f.tone.dLo=TONE.dLo; f.tone.dHi=TONE.dHi; saveFileSoon(f); }
         }
-        TONE.cache.set(si, {off:a/TONE.sr, t:r.t, f0:r.f0});
+        /* 프레임별 상대 진폭(±25ms 최대 ÷ 문장 최대) — 소리가 약한 곳은 흐리게 그리기 위함 */
+        const win=Math.round(0.025*TONE.sr);
+        let smax=1;
+        for(let k=a;k<b;k++){ const v=Math.abs(TONE.pcm[k]); if(v>smax) smax=v; }
+        const amp=new Float32Array(r.f0.length);
+        for(let i2=0;i2<r.t.length;i2++){
+          const ct=a+Math.round(r.t[i2]*TONE.sr);
+          const s0=Math.max(a,ct-win), s1=Math.min(b,ct+win);
+          let m=0;
+          for(let k=s0;k<s1;k++){ const v=Math.abs(TONE.pcm[k]); if(v>m) m=v; }
+          amp[i2]=m/smax;
+        }
+        TONE.cache.set(si, {off:a/TONE.sr, t:r.t, f0:r.f0, amp});
         if(TONE.cache.size>40) TONE.cache.delete(TONE.cache.keys().next().value);
         cache.key='';
       }
@@ -1575,12 +1677,23 @@ function toneScale(){
 const cv = { over:$('#cOver'), zoom:$('#cZoom'), rhy:$('#cRhy') };
 /* 상단 파형의 보기 창 상태 */
 const OV = { drag:false, t:0, win:12, winFor:-1, focus:0, t0:0, t1:0, gmax:0 };
+/* 두 번째 칸을 첫 번째 칸 높이(52px)로 줄였다. 세로만 줄이면 파형이 납작해지므로
+   가로도 같은 비율로 줄여 모양을 그대로 유지한다. 세 번째 칸도 같은 가로 범위를 써서
+   재생 막대가 위아래로 정확히 맞는다. */
+const ZOOM_SC = 52/78;
+const PADR = (1 - 0.8*ZOOM_SC)/2;
+/* 세 번째 칸(성조)은 두 번째 칸과 '가로 범위를 똑같이' 쓴다.
+   같은 시각이 위아래 같은 자리에 오지 않으면 학습자가 파형과 성조를 짝지을 수 없다.
+   크기는 세로(칸 높이 78px)로만 줄인다. */
+const PADR3 = PADR;
 function fit(c){
   const dpr = Math.min(window.devicePixelRatio||1, 2.5);
   const r = c.getBoundingClientRect();
-  c.width = Math.max(1, Math.round(r.width*dpr));
-  c.height = Math.max(1, Math.round(r.height*dpr));
-  const g = c.getContext('2d'); g.setTransform(dpr,0,0,dpr,0,0);
+  const W = Math.max(1, Math.round(r.width*dpr)), H = Math.max(1, Math.round(r.height*dpr));
+  const g = c.getContext('2d');
+  /* 크기가 바뀔 때만 다시 잡는다. 매번 잡으면 그때마다 캔버스를 통째로 새로 할당한다. */
+  if(c.width!==W || c.height!==H){ c.width=W; c.height=H; }
+  g.setTransform(dpr,0,0,dpr,0,0);
   return {g, w:r.width, h:r.height};
 }
 function peaks(env, a, b, cols, fixedMax){
@@ -1629,12 +1742,17 @@ function paintProgress(t){
       OV.winFor = S.si;
     }
     const ft = OV.drag ? OV.t : mids[S.si];
-    const t0 = ft - OV.win/2, t1 = ft + OV.win/2;
+    /* 창이 파일 밖으로 나가면 안쪽으로 밀어 넣는다.
+       (밖으로 나간 채 두면 그리는 범위와 좌표 계산이 어긋나
+        첫 문장이 가운데 있는 것처럼 보인다) */
+    let t0 = ft - OV.win/2, t1 = ft + OV.win/2;
+    if(t1 > dur){ t0 -= (t1-dur); t1 = dur; }
+    if(t0 < 0){ t1 = Math.min(dur, t1 - t0); t0 = 0; }
     OV.t0=t0; OV.t1=t1;                                   // 터치 위치 계산에 쓴다
 
     if(!OV.gmax){ let m=0; for(let i=0;i<env.length;i++) if(env[i]>m) m=env[i]; OV.gmax=m||1; }
     const cols=Math.round(w);
-    const key2=Math.round(ft*25)+'|'+cols+'|'+S.files[S.cur].id;
+    const key2=Math.round(t0*25)+'|'+Math.round(t1*25)+'|'+cols+'|'+S.files[S.cur].id;
     if(!cache.over || cache.over.k!==key2){
       const ia=Math.max(0,Math.floor(t0/hop)), ib=Math.min(env.length,Math.ceil(t1/hop));
       cache.over={k:key2, p:peaks(env, ia, ib, cols, OV.gmax)};
@@ -1683,7 +1801,7 @@ function paintProgress(t){
     const {g,w,h}=fit(cv.zoom); g.clearRect(0,0,w,h);
     /* 좌우에 10%씩 여백. 가로가 20% 줄어든 만큼 세로도 0.8배로 줄여
        파형 모양이 위아래로 늘어나 보이지 않게 한다. */
-    const PADX=w*0.10, iw=w-PADX*2;
+    const PADX=w*PADR, iw=w-PADX*2;
     const cols=Math.max(1, Math.round(iw));
     const ck=S.si+'_'+cols;
     if(!cache.zoom || cache.zoom.k!==ck) cache.zoom={k:ck, p:peaks(env,a,b,cols)};
@@ -1702,7 +1820,7 @@ function paintProgress(t){
   /* --- 하단: 원어민 성조 파형 (2단과 가로축 완전히 동일) --- */
   {
     const {g,w,h}=fit(cv.rhy); g.clearRect(0,0,w,h);
-    const PADX=w*0.10, iw=w-PADX*2;
+    const PADX=w*PADR3, iw=w-PADX*2;   /* 두 번째 칸과 동일 */
     const px = PADX + clamp((t-c.s)/(c.e-c.s),0,1)*iw;
     const on = toneActive();
     const tw = on ? TONE.cache.get(S.si) : null;
@@ -1714,27 +1832,40 @@ function paintProgress(t){
         g.beginPath(); g.arc(w/2 + d*11, h/2, 2.6, 0, Math.PI*2); g.fill();
       }
     } else {
-      const PAD=7, sc=toneScale();
-      /* 가로 여백과 같은 비율(0.8)로 세로도 줄여 곡선이 늘어나 보이지 않게 */
-      const yOf = fr => h/2 - (fr-0.5)*(h-PAD*2)*0.8;
+      const sc=toneScale();
+      /* 가로와 똑같은 비율로 세로도 줄인다 (0.68 = 이전 그림 높이 × 0.85 ÷ 새 칸 높이) */
+      const yOf = fr => h/2 - (fr-0.5)*h*0.68;
       /* 눈금 없음 — 성조는 선의 모양(오름/내림/평평)으로 읽는다. */
       // 곡선 — 무성 구간에서는 끊어 그린다 (없는 데이터를 만들어내지 않도록)
       const span=c.e-c.s;
-      const stroke=(color,x0,x1)=>{
+      /* 소리 세기에 따라 선을 3등급으로:
+         35% 이상 = 2.4px 진하게 / 15~35% = 1.9px 반투명 / 15% 미만 = 1.5px 흐리게.
+         약한 소리에서 F0 오류가 급증하므로(옥타브 오류 5~10%대 7.95%),
+         믿을 수 있는 구간만 진하게 보여준다. */
+      const TW_W=[2.4,1.9,1.5], TW_A=[1,.55,.30];
+      const tier=v=> v>=0.35?0 : v>=0.15?1 : 2;
+      const stroke=(rgb,base,x0,x1)=>{
         if(x1<=x0) return;
         g.save(); g.beginPath(); g.rect(x0,0,x1-x0,h); g.clip();
-        g.strokeStyle=color; g.lineWidth=2.4; g.lineJoin='round'; g.lineCap='round';
-        g.beginPath(); let open=false;
+        g.lineJoin='round'; g.lineCap='round';
+        let lx=null, ly=null, li=-1;
         for(let i=0;i<tw.f0.length;i++){
           const f0=tw.f0[i]; const tt=tw.off+tw.t[i];
-          if(f0<=0 || tt<c.s || tt>c.e){ open=false; continue; }
+          if(f0<=0 || tt<c.s || tt>c.e){ lx=null; continue; }
           const x=PADX+((tt-c.s)/span)*iw, y=yOf(sc.f(f0));
-          if(open) g.lineTo(x,y); else { g.moveTo(x,y); open=true; }
+          if(lx!==null){
+            const av = tw.amp ? Math.min(tw.amp[li]??1, tw.amp[i]??1) : 1;
+            const k = tier(av);
+            g.strokeStyle='rgba('+rgb+','+(base*TW_A[k]).toFixed(2)+')';
+            g.lineWidth=TW_W[k];
+            g.beginPath(); g.moveTo(lx,ly); g.lineTo(x,y); g.stroke();
+          }
+          lx=x; ly=y; li=i;
         }
-        g.stroke(); g.restore();
+        g.restore();
       };
-      stroke('rgba(120,132,155,.85)', 0, px);
-      stroke('rgba(63,211,155,.95)', px, w);
+      stroke('120,132,155', .85, 0, px);
+      stroke('63,211,155', .95, px, w);
       g.strokeStyle='rgba(255,255,255,.85)'; g.lineWidth=1.3;
       g.beginPath(); g.moveTo(px,0); g.lineTo(px,h); g.stroke();
       if(S.playing && !TONE.cache.has(S.si+1)) toneFor(S.si+1);   // 다음 문장 미리 계산
@@ -1749,7 +1880,7 @@ function paintProgress(t){
 function updateMeta(){
   if(S.cur<0){ $('#sIdx').textContent='— / —'; $('#sLen').textContent=''; return; }
   const c=S.sent[S.si];
-  $('#sIdx').textContent = (S.si+1)+' / '+S.sent.length;
+  if(!rewindArm) $('#sIdx').textContent = (S.si+1)+' / '+S.sent.length;
   $('#sLen').textContent = '문장 '+((c.e-c.s).toFixed(1))+'초';
   const key=S.files[S.cur].id+':'+S.si;
   $('#bStar').classList.toggle('on', !!S.stars[key]);
@@ -1852,6 +1983,8 @@ function setSpeed(d){
 $('#bSlow').onclick=()=>setSpeed(-1);
 $('#bFast').onclick=()=>setSpeed(1);
 
+$('#sIdx').onclick = askRewind;
+
 $('#bStar').onclick = ()=>{
   if(S.cur<0) return;
   const key=S.files[S.cur].id+':'+S.si;
@@ -1911,7 +2044,7 @@ $('#bStar').onclick = ()=>{
 })();
 
 /* 손가락·마우스로 누른 뒤 초록 테두리가 남지 않게 (키보드 조작 때는 그대로 표시) */
-document.querySelectorAll('.tb, .spd button, .star').forEach(b=>{
+document.querySelectorAll('.tb, .spd button, .star, .idx').forEach(b=>{
   b.addEventListener('pointerup', ()=>{ try{ b.blur(); }catch(e){} });
 });
 
@@ -1974,7 +2107,7 @@ document.querySelectorAll('#segTlen button').forEach(b=>b.onclick=()=>{
 $('#bReanalyze').onclick = async ()=>{
   if(S.cur<0){ toast('먼저 파일을 불러오세요'); return; }
   const f=S.files[S.cur];
-  f.sent = detectSentences(f.env, f.hop, f.dur, tl(S.tlen).t, tl(S.tlen).m);
+  f.sent = detectSentences(f.env, f.hop, f.dur, tl(S.tlen).t, tl(S.tlen).m, tl(S.tlen).b);
   f.tlen = S.tlen; f.last = 0; f.skip = {};      /* 문장 번호가 바뀌므로 초기화 */
   await DB.putFile(f);
   S.sent=f.sent; S.si=0; S.reps=0;
@@ -2015,6 +2148,39 @@ window.addEventListener('drop', e=>{ if(e.dataTransfer.files.length) importFiles
 /* =========================================================================
    7. 시작
    ========================================================================= */
+/* ===== 새 버전 알림 =====
+   GitHub에 새 index.html 을 올리면, 앱이 알아채고 아래에 알림을 띄운다.
+   누르면 캐시를 비우고 새로 받는다. 불러온 음원과 설정은 그대로 남는다. */
+const APP_VERSION = '20260822-1900';
+let verChecked = 0;
+
+async function checkUpdate(){
+  if(!location.protocol.startsWith('http')) return;      // 파일 직접 열기면 해당 없음
+  if(Date.now() - verChecked < 60000) return;            // 1분에 한 번까지만
+  verChecked = Date.now();
+  try{
+    const r = await fetch('./index.html?nocache=' + Date.now(), {cache:'no-store'});
+    if(!r.ok) return;
+    const txt = await r.text();
+    const m = txt.match(/APP_VERSION\s*=\s*'([^']+)'/);
+    if(m && m[1] !== APP_VERSION) $('#newver').classList.add('on');
+  }catch(e){}
+}
+
+$('#nvGo').onclick = async ()=>{
+  $('#nvGo').textContent = '받는 중…';
+  try{ const ks = await caches.keys(); await Promise.all(ks.map(k=>caches.delete(k))); }catch(e){}
+  try{ const rs = await navigator.serviceWorker.getRegistrations();
+       await Promise.all(rs.map(r=>r.unregister())); }catch(e){}
+  location.reload();
+};
+
+document.addEventListener('visibilitychange', ()=>{
+  if(document.hidden) flushSaves();          /* 앱을 내릴 때 미뤄둔 저장을 마무리 */
+  else checkUpdate();
+});
+window.addEventListener('pagehide', flushSaves);
+
 (async function init(){
   const dbOk = await DB.open();
   const st = await DB.getKV('set');
@@ -2040,7 +2206,12 @@ window.addEventListener('drop', e=>{ if(e.dataTransfer.files.length) importFiles
     rows.sort((a,b)=>a.id<b.id?-1:1);
     for(const r of rows){
       if(!r.blob || !r.env) continue;
-      if(r.ver!==ALGO_VER){ r.sent=detectSentences(r.env,r.hop,r.dur,tl(S.tlen).t,tl(S.tlen).m); r.skip={}; r.ver=ALGO_VER; DB.putFile(r); }
+      if(r.ver!==ALGO_VER){ r.sent=detectSentences(r.env,r.hop,r.dur,tl(S.tlen).t,tl(S.tlen).m,tl(S.tlen).b); r.skip={}; r.ver=ALGO_VER; DB.putFile(r); }
+      const meta = await DB.getKV('meta:'+r.id);
+      if(meta){
+        if(meta.last>=0) r.last=meta.last;
+        if(r.tone && meta.dLo>0){ r.tone.dLo=meta.dLo; r.tone.dHi=meta.dHi; }
+      }
       S.files.push(r);
     }
   }
@@ -2053,17 +2224,21 @@ window.addEventListener('drop', e=>{ if(e.dataTransfer.files.length) importFiles
   new ResizeObserver(()=>{ cache={over:null,zoom:null,rhy:null,key:''}; window.place&&window.place(); paintAll(); })
     .observe($('#stage'));
 
+  /* 모바일 브라우저는 첫 터치 전까지 소리를 잠가 둔다 */
+  window.addEventListener('pointerdown', ()=>{
+    try{ if(WA.ctx && WA.ctx.state==='suspended') WA.ctx.resume(); }catch(e){}
+  });
+  setTimeout(checkUpdate, 2500);
   setTimeout(()=>{ $('#splash').classList.add('gone');
     setTimeout(()=>$('#splash').remove(),500); }, 900);
 })();
-</script>
-<script>
-/* 오프라인 캐시 등록 — 파일을 직접 열었을 때(file://)는 조용히 넘어간다 */
-if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('sw.js').catch(() => {});
-  });
+
+/* ── PWA: 오프라인 캐시 담당자(sw.js) 등록 ── */
+if('serviceWorker' in navigator){
+  window.addEventListener('load', ()=>{ navigator.serviceWorker.register('./sw.js').catch(()=>{}); });
 }
+/* 저장공간 부족 시에도 음원·설정이 지워지지 않게 보호 요청 */
+if(navigator.storage && navigator.storage.persist){ navigator.storage.persist().catch(()=>{}); }
 </script>
 </body>
 </html>
