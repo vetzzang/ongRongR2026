@@ -2,15 +2,16 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0d1117">
-<link rel="manifest" href="manifest.webmanifest">
-<link rel="icon" href="favicon-64.png">
-<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>옹알옹알</title>
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" href="./favicon-64.png" sizes="64x64">
+<link rel="apple-touch-icon" href="./apple-touch-icon.png">
+<meta name="apple-mobile-web-app-title" content="옹알옹알">
 <style>
   :root{
     --bg:#0d1117; --panel:#202838; --panel2:#2a3446; --line:#2b3546;
@@ -68,6 +69,15 @@
   .wrap{position:relative;border-radius:10px;overflow:hidden;background:#05080d;}
   #wOver{height:52px;touch-action:none;cursor:grab} #wZoom{height:52px} #wRhy{height:78px}
   .wrap+.wrap{margin-top:8px}
+  /* 자막 띠 — srt 가 붙은 파일에서만 나타난다. 없으면 아예 자리를 차지하지 않는다. */
+  #wCap{display:none;align-items:center;padding:6px 12px}
+  #wCap.on{display:flex}
+  /* 줄 수는 파일마다 미리 잡는다(--capn). 자막이 바뀔 때 띠가 늘었다 줄었다 하지 않게. */
+  #capTx{width:100%;text-align:center;color:var(--ink);
+    min-height:calc(var(--capn,1) * 1.35 * 15px);
+    display:flex;flex-direction:column;justify-content:center}
+  #capTx .cl{font-size:15px;line-height:1.35;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #capTx.off{color:var(--dim2)}
   canvas{display:block;width:100%;height:100%}
   .times{display:flex;justify-content:space-between;padding:5px 2px 0;font-size:11.5px;color:var(--dim)}
   .times .cur{color:var(--green)}
@@ -223,6 +233,130 @@
   .toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
 
   @media (prefers-reduced-motion: reduce){*{animation-duration:.01ms !important;transition-duration:.01ms !important}}
+
+  /* ═══ 대본 5줄 — 다섯 줄이 한 박스 안에, 체크박스는 각 줄 중앙에 맞춰 배치 ═══ */
+  #lines{flex:1 1 auto;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;
+    padding:4px 0;scrollbar-width:none}
+  #lines::-webkit-scrollbar{display:none}
+  #ltabWrap{padding:6px 12px 2px}
+  #lrow{display:flex;align-items:stretch;gap:10px}
+  #lcol{position:relative;flex:0 0 27px}
+  #lcol .cb2{position:absolute;left:0;transform:translateY(-50%)}
+  #lbox{flex:1 1 auto;min-width:0;background:var(--panel);border:1px solid var(--line);
+    border-radius:12px;padding:9px 11px}
+  #lbox{--lgap:7px}
+  #lflow{display:flex;flex-wrap:wrap;align-items:flex-start;
+    column-gap:22px;row-gap:calc(var(--lgap)*2);overflow-x:auto;scrollbar-width:none}
+  #lflow::-webkit-scrollbar{display:none}
+  table.lseg{border-collapse:collapse;flex:0 0 auto}
+  table.lseg td{padding:calc(var(--lgap)/2) 3px;text-align:center;vertical-align:middle;white-space:nowrap}
+  table.lseg td.brk{padding-right:10px}
+  table.lseg .py,table.lseg .kr,table.lseg .pc{color:var(--dim);font-style:normal}
+  table.lseg b{color:var(--ink)}
+  tr.roff td{opacity:.13}
+  #ltrans{margin-top:0;padding-top:0;border-top:0}
+  #ltrans .ttx{line-height:1.55;padding:calc(var(--lgap)/2) 3px}
+  #ltrans .ttx.roff2{opacity:.13}
+  /* flex:0 0 auto — 카드 안에서 옆 미리보기가 길면 네모가 눌려 직사각형이 된다.
+     체크박스는 어떤 줄이든 같은 정사각형이어야 한다. */
+  .cb2{width:27px;height:27px;flex:0 0 auto;box-sizing:border-box;
+    border-radius:7px;border:1.6px solid var(--dim);
+    background:transparent;color:var(--dim);display:grid;place-items:center;
+    font-size:14px;line-height:1;cursor:pointer;padding:0}
+  .cb2:focus-visible{outline:2px solid var(--green);outline-offset:2px}
+  .cb2 span{opacity:0}
+  .cb2.on{border-color:var(--dim);color:var(--ink)}
+  .cb2.on span{opacity:1}
+  #noLines{color:var(--dim2);font-size:13px;padding:16px 12px;text-align:center;line-height:1.7}
+  .subchip{flex:0 0 auto;font-size:11.5px;padding:5px 8px;border-radius:8px;
+    border:1px solid var(--line);color:var(--dim);background:transparent;line-height:1;margin-right:6px}
+
+  /* ═══ 설정 — 대본 5줄 카드 ═══ */
+  #lcards{display:flex;flex-direction:column;gap:8px;padding:2px 0 4px;position:relative}
+  .lcard{display:flex;align-items:center;gap:9px;background:var(--panel);
+    border:1px solid var(--line);border-radius:12px;padding:9px 11px;min-height:62px;
+    touch-action:pan-y;transition:transform .16s ease;user-select:none}
+  .lcard.drag{border-color:rgba(255,255,255,.55);box-shadow:0 10px 28px rgba(0,0,0,.55);
+    z-index:5;position:relative;transition:none}
+  .lprev{flex:1 1 auto;min-width:0;overflow:hidden;white-space:nowrap;line-height:1.3;
+    -webkit-mask-image:linear-gradient(90deg,#000 76%,transparent 100%);
+    mask-image:linear-gradient(90deg,#000 76%,transparent 100%)}
+  .lprev .sy{display:inline-block;margin-right:9px;vertical-align:middle}
+  .lprev .kr,.lprev .py{color:var(--dim)}
+  .lprev b{color:var(--ink);font-weight:700}
+  .ltog{flex:0 0 auto;font-size:11.5px;padding:5px 7px;border-radius:8px;
+    border:1px solid var(--line);color:var(--dim);background:transparent;line-height:1}
+  .ltog.on{border-color:var(--green);color:var(--green)}
+  .lsz{flex:0 0 auto;display:flex;align-items:center;gap:1px}
+  .lsz button{width:30px;height:30px;flex:0 0 auto;border-radius:8px;border:0;background:transparent;
+    color:var(--ink);font-size:19px;line-height:1;padding:0}
+  .lsz button:disabled{color:var(--dim2)}
+  .lsz b{flex:0 0 auto;font-variant-numeric:tabular-nums;font-size:14px;min-width:30px;text-align:center;font-weight:600}
+  .lsz b i{color:var(--dim);font-style:normal;font-size:12px}
+  .lchint{color:var(--dim);font-size:12.5px;padding:6px 4px 10px}
+  .lcfoot{display:flex;gap:8px;padding:0 0 4px}
+  .lcfoot .seg{flex:1 1 0;justify-content:center;padding:11px 10px;font-size:13.5px;color:var(--ink)}
+  .lcbanner{position:fixed;left:16px;right:16px;bottom:calc(18px + var(--safeb));
+    background:var(--panel2);border:1px solid var(--line);border-radius:10px;
+    text-align:center;padding:11px;font-size:13.5px;z-index:60;display:none}
+  .lcbanner.on{display:block}
+  .hide{display:none !important}
+  /* NEXT 영역은 고정, 남는 세로는 대본이 쓴다 (대본이 눌려 사라지지 않게) */
+  #stage{flex:0 0 auto;height:clamp(132px,17vh,190px);min-height:0}
+
+  /* 폰: 전부 한 화면에 들어가도록 압축한다 — 파형·여백·표·NEXT·휠을 줄여서.
+     음성파일을 고르면 3단 파형 + 5줄 + NEXT + 휠이 스크롤 없이 다 보여야 한다. */
+  @media (max-width:699px){
+    .bar{padding:6px 10px 5px}
+    .tb{width:44px;height:44px}
+    .spd{height:44px}
+    #wOver{height:clamp(36px,4.2vh,52px)}
+    #wZoom{height:clamp(40px,5.8vh,64px)}
+    #wRhy{height:clamp(52px,7.2vh,84px)}
+    #wCap{padding:4px 8px}
+    #capTx{min-height:calc(var(--capn,1) * 1.35 * 13.5px)}
+    #capTx .cl{font-size:13.5px}
+    .times{font-size:11px}
+    .meta{padding:7px 14px 0}
+    #lines{padding:2px 0}
+    table.lseg td{padding:calc(var(--lgap)/2) 2px}
+    #lbox{padding:7px 8px;--lgap:5px}
+    #lrow{gap:8px}
+    #lcol{flex:0 0 24px}
+    .cb2{width:24px;height:24px;font-size:12px}
+    #lflow{column-gap:15px;row-gap:8px}
+    #stage{height:clamp(96px,13vh,140px)}
+    #next{width:96px;height:96px;font-size:14px}
+    #wheel{height:96px;
+      -webkit-mask-image:linear-gradient(180deg,transparent 0,#000 30%,#000 70%,transparent 100%);
+      mask-image:linear-gradient(180deg,transparent 0,#000 30%,#000 70%,transparent 100%)}
+    #wheelInner{padding:26px 0}
+    #wheelWrap{padding:0 12px calc(4px + var(--safeb))}
+  }
+  /* 그래도 안 들어가는 아주 짧은 화면만 최후에 페이지 스크롤 */
+  @media (max-width:699px) and (max-height:660px){
+    /* body가 height:100% 스크롤 컨테이너가 되면 window 스크롤이 안 먹어
+       NEXT·휠에 영영 못 내려간다 — 문서 자체가 자라나게 한다 */
+    html,body{height:auto;min-height:100%;overflow:auto}
+    #app{height:auto;min-height:100vh}
+  }
+
+  /* ═══ 태블릿 — 1단 유지, 폭·크기만 키운다 ═══ */
+  @media (min-width:700px){
+    .bar,.waves,.meta,#wheelWrap{max-width:820px;margin-left:auto;margin-right:auto;width:100%}
+    #lines{max-width:1200px;margin-left:auto;margin-right:auto;width:100%}
+    .sheet .shead,.sheet .sbody,.sheet .cta{max-width:680px;margin-left:auto;margin-right:auto;width:100%}
+    #wOver canvas,#cOver{height:68px}
+    .tb{width:52px;height:52px}
+    #lines{padding:6px 8px}
+    #stage{height:clamp(150px,16vh,210px)}
+  }
+  /* 가로로 눕히면 세로가 부족하다. 파형과 NEXT를 조금 낮춰 대본 자리를 만든다. */
+  @media (orientation:landscape) and (max-height:900px){
+    #wOver{height:44px} #wZoom{height:44px} #wRhy{height:66px}
+    #stage{height:124px}
+  }
+
 </style>
 </head>
 <body>
@@ -251,6 +385,7 @@
     <div class="times mono"><span id="tStart">00:00:00</span><span class="cur" id="tCur">00:00:00</span><span id="tEnd">00:00:00</span></div>
     <div class="wrap" id="wZoom" style="margin-top:6px"><canvas id="cZoom"></canvas></div>
     <div class="wrap" id="wRhy"><canvas id="cRhy"></canvas></div>
+    <div class="wrap" id="wCap"><div id="capTx"></div></div>
   </div>
 
   <div class="meta">
@@ -260,6 +395,10 @@
     <button class="star" id="bStar" aria-label="이 문장 즐겨찾기"><svg viewBox="0 0 24 24"><path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8L3.5 9.7l5.9-.9z"/></svg></button>
   </div>
 
+  <div id="lines">
+    <div id="ltabWrap"></div>
+    <div id="noLines">이 문장에는 대본이 없습니다.<br>설정 → 대본 5줄 → <b>팩 열기</b>를 누르면 예문이 들어옵니다.</div>
+  </div>
   <div id="stage" class="nofile">
     <div id="dragHint">끌어서 위치 옮기기</div>
     <div id="gapBadge">따라 말하세요…</div>
@@ -275,6 +414,7 @@
   <div class="shead">
     <button class="tb" id="fBack" aria-label="뒤로"><svg viewBox="0 0 24 24"><path d="M19 12H5M11 6l-6 6 6 6"/></svg></button>
     <h2>파일</h2>
+    <button class="tb" id="fDir" aria-label="폴더 열기"><svg viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M12 11v5M9.5 13.5L12 11l2.5 2.5"/></svg></button>
     <button class="tb" id="fAdd" aria-label="파일 추가"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
   </div>
   <div class="sbody">
@@ -289,7 +429,8 @@
     </div>
   </div>
   <button class="cta" id="fPlay" disabled><svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg><span id="fPlayTxt">열기</span></button>
-  <input type="file" id="picker" accept="audio/*,.mp3,.m4a,.wav,.ogg" multiple hidden>
+  <input type="file" id="picker" accept="audio/*,.mp3,.m4a,.wav,.ogg,.srt,.vtt" multiple hidden>
+  <input type="file" id="pickDir" webkitdirectory directory multiple hidden>
 </div>
 
 <!-- 설정 화면 -->
@@ -326,6 +467,19 @@
         <div class="seg" id="segWake"><button data-v="1">켬</button><button data-v="0" class="on">끔</button></div></div>
     </div>
 
+    <div class="grp">대본 5줄</div>
+    <div id="lcards"></div>
+    <div class="lchint">길게 눌러 순서 변경 — 메인 화면의 줄 순서도 같이 바뀝니다</div>
+    <div class="lcfoot">
+      <button class="seg" id="bLdefault">↺ 기본값으로</button>
+      <button class="seg" id="bPack">기본 대본 불러오기</button>
+    </div>
+    <div class="lcbanner" id="lcBanner">손을 떼면 위치 확정</div>
+    <div class="grp">설치</div>
+    <div class="card">
+      <div class="opt"><div class="lbl">홈 화면에 설치<div class="hint" id="instTxt">확인 중…</div></div>
+        <button class="seg" style="padding:8px 14px" id="bInstall" disabled>설치</button></div>
+    </div>
     <div class="grp">이 앱에 대해</div>
     <div class="card">
       <div class="opt"><div class="lbl">인터넷 사용<div class="hint">전혀 하지 않습니다. 불러온 음원은 이 기기 밖으로 나가지 않습니다.</div></div></div>
@@ -357,6 +511,12 @@
  *   ToneWave.draw(document.getElementById('cv'), res, { scale:'semitone' });
  *
  * 반환값 res
+ *
+ * [2026-08 Praat 대조 검증] 10개 파일 — 중국어·일본어·영어, 남녀·대화,
+ *   wav/CBR/VBR, 42k~320kbps, 24k·44.1kHz, 5.8초~262초, 배경음악·신호음 포함.
+ *   유성판정 일치 96.4%, 센트오차 중앙 2.4, ±50센트 이내 97.7%, 옥타브 오류 0.56%,
+ *   음절 기울기 방향 50/50 일치. 어긋남은 "덜 그리는" 안전한 방향.
+ *
  *   { duration, sampleRate, range:[floor,ceiling], median,
  *     t:Float64Array,         // 프레임 시각(초), 10 ms 간격
  *     f0:Float64Array,        // Hz, 0 = 무성
@@ -442,6 +602,10 @@ function pitchAC(x, fs, o){
   const floorHz=o.floor, ceilHz=o.ceiling, dt=o.timeStep||0.01;
   const maxCand=15, silenceTh=0.03, voicingTh=0.45,
         octaveCost=0.01, octaveJumpCost=0.35, vuvCost=0.10;
+  /* [검증반영] vuvCost 0.14 → 0.10
+     0.14에서는 음절 사이 20~40ms짜리 짧은 무음을 "건너뛰는 게 싸다"고 판단해
+     두 음절이 한 덩어리로 붙었다. 중국어 3파일 실측: 잘못된 병합 6군데 → 0군데,
+     Praat 유성덩어리와의 1:1 대응 87% → 94%. 경계 오차 중앙값은 8ms로 동일. */
 
   const winLen = Math.round(3.0/floorHz*fs);        // 3 periods of the floor
   const nfft   = nextPow2(winLen*2);
@@ -779,7 +943,7 @@ const fmt = t => { if(!isFinite(t)||t<0)t=0;
 const fmtShort = t => { if(!isFinite(t))t=0; const m=Math.floor(t/60), s=Math.floor(t%60);
   return m+':'+String(s).padStart(2,'0'); };
 
-const ALGO_VER = 13;                       // 알고리즘 바뀌면 올림 → 저장된 분석 자동 무효화
+const ALGO_VER = 16;   /* [검증반영] vuvCost·신뢰도 표시·분위수 표시범위 → 재계산 */                       // 알고리즘 바뀌면 올림 → 저장된 분석 자동 무효화
 const HOP = 0.01;                         // 10ms 단위로 소리 크기 측정
 /* 문장 길이 설정 — t: 여기부터 문장 경계로 보는 무음 길이(초)
                     m: 이보다 긴 문장은 안쪽 숨돌림에서 한 번 더 쪼갬(초) */
@@ -1527,7 +1691,7 @@ async function toneInit(f){
     if(TONE.fileId!==f.id) return;
     TONE.pcm=f.pcm; TONE.sr=f.psr||8000;
 
-    if(f.tone && f.tone.median && f.tone.v===4){ Object.assign(TONE, f.tone); }
+    if(f.tone && f.tone.median && f.tone.v===5){ Object.assign(TONE, f.tone); }
     else{
       /* 한 군데만 보면 그 대목에 높은 1성이 없을 때 천장이 낮게 잡힌다.
          낮게 잡힌 천장은 높은 음을 절반값으로 잘못 읽게 만든다(옥타브 착오).
@@ -1548,17 +1712,42 @@ async function toneInit(f){
          한국어·영어 남성도 저음이 깊다. 위쪽은 높은 1성을 놓치지 않을 만큼만. */
       const range=[Math.max(45, Math.round(r.range[0]*0.72)),
                    Math.min(1000, Math.round(r.range[1]*1.20))];
-      /* 실제로 낸 최저~최고 음. 화면을 꽉 채워 쓰기 위한 표시 범위. */
-      let mn=Infinity, mx=0;
-      for(let i=0;i<r.f0.length;i++){ const v=r.f0[i];
-        if(v>0){ if(v<mn) mn=v; if(v>mx) mx=v; } }
-      if(!(mn<mx)){ mn=range[0]; mx=range[1]; }
+      /* [검증반영] 표시 범위를 절대 최저~최고가 아니라 2~98% 분위수로 잡는다.
+         절대값을 쓰면 문장 끝 갈라지는 목소리 한 프레임(예: 62Hz) 때문에
+         범위가 통째로 넓어져 나머지 모든 문장이 눌린다.
+         실측 세로 사용률: 절대 min~max 32~39% → 2~98% 분위수 40~64%.
+
+         화자별·문장별로 축을 따로 잡는 방식도 만들어 봤으나 뺐다.
+         낮게 말하는 사람은 낮게, 높게 말하는 사람은 높게 보여야 하는데
+         축을 따로 잡으면 그 정보가 사라진다. 축은 파일 하나에 하나. */
+      let mn=r.p2, mx=r.p98;
+      if(!(mn>0 && mx>mn)){ mn=range[0]; mx=range[1]; }
       f.tone={range, median:r.median, p2:r.p2, p98:r.p98,
-              dLo:Math.max(range[0], mn*0.944), dHi:Math.min(range[1], mx*1.059)};
-      f.tone.v=4; Object.assign(TONE, f.tone); DB.putFile(f);
+              dLo:Math.max(range[0], mn*0.90), dHi:Math.min(range[1], mx*1.11)};
+      f.tone.v=5; Object.assign(TONE, f.tone); DB.putFile(f);
     }
     TONE.ready=true; cache.key='';
   }catch(e){ TONE.ready=false; }
+}
+
+/* [검증반영] 프레임마다 그 구간의 상대 진폭(0~1)을 잰다. 기준은 이 문장 안의 최대치.
+   10개 파일 실측 — 상대진폭 40% 이상: 옥타브 오류 0.00%·중앙오차 2.2센트,
+   5~10%: 옥타브 오류 7.95%·중앙오차 6.6센트. 못 믿을 구간을 또렷하게 그리면
+   학습자가 잘못 배우므로 흐리게 그린다. */
+function frameAmp(pcm, a, b, t, sr){
+  const n=t.length, amp=new Float64Array(n);
+  const half=Math.round(0.025*sr);
+  let peak=1e-9;
+  for(let i=a;i<b;i++){ const v=Math.abs(pcm[i]); if(v>peak) peak=v; }
+  for(let k=0;k<n;k++){
+    const c=a+Math.round(t[k]*sr);
+    let m=0;
+    for(let i=Math.max(a,c-half), e=Math.min(b,c+half); i<e; i+=4){
+      const v=Math.abs(pcm[i]); if(v>m) m=v;
+    }
+    amp[k]=Math.min(1, m/peak);
+  }
+  return amp;
 }
 
 /* 성조 곡선 뒷정리 — 물리적으로 불가능한 값을 걸러낸다.
@@ -1629,9 +1818,14 @@ async function toneFor(si){
                                       median:TONE.median, spread:14});   /* 기준은 파일 전체 */
       if(TONE.fileId===id){
         tidyF0(r.f0);                                /* 화면에 그리기 전에 걸러낸다 */
+        /* [검증반영] 범위를 넓힐 때도 절대 최저·최고가 아니라 이 문장의 2~98%를 쓴다.
+           한두 프레임의 극단값으로 축 전체가 늘어나지 않게. */
         let mn=Infinity, mx=0;
-        for(let k=0;k<r.f0.length;k++){ const v=r.f0[k];
-          if(v>0){ if(v<mn) mn=v; if(v>mx) mx=v; } }
+        {
+          const v=[]; for(let k=0;k<r.f0.length;k++) if(r.f0[k]>0) v.push(r.f0[k]);
+          if(v.length>=8){ v.sort((x,y)=>x-y);
+            mn=v[Math.floor(v.length*0.02)]; mx=v[Math.floor(v.length*0.98)]; }
+        }
         if(mn<mx){                                   /* 화면 밖으로 나갈 값이면 범위를 넓힌다 */
           let grew=false;
           if(mn < TONE.dLo){ TONE.dLo = Math.max(TONE.range[0], mn*0.97); grew=true; }
@@ -1639,18 +1833,7 @@ async function toneFor(si){
           const f=S.files[S.cur];
           if(grew && f && f.tone){ f.tone.dLo=TONE.dLo; f.tone.dHi=TONE.dHi; saveFileSoon(f); }
         }
-        /* 프레임별 상대 진폭(±25ms 최대 ÷ 문장 최대) — 소리가 약한 곳은 흐리게 그리기 위함 */
-        const win=Math.round(0.025*TONE.sr);
-        let smax=1;
-        for(let k=a;k<b;k++){ const v=Math.abs(TONE.pcm[k]); if(v>smax) smax=v; }
-        const amp=new Float32Array(r.f0.length);
-        for(let i2=0;i2<r.t.length;i2++){
-          const ct=a+Math.round(r.t[i2]*TONE.sr);
-          const s0=Math.max(a,ct-win), s1=Math.min(b,ct+win);
-          let m=0;
-          for(let k=s0;k<s1;k++){ const v=Math.abs(TONE.pcm[k]); if(v>m) m=v; }
-          amp[i2]=m/smax;
-        }
+        const amp=frameAmp(TONE.pcm, a, b, r.t, TONE.sr);
         TONE.cache.set(si, {off:a/TONE.sr, t:r.t, f0:r.f0, amp});
         if(TONE.cache.size>40) TONE.cache.delete(TONE.cache.keys().next().value);
         cache.key='';
@@ -1668,7 +1851,9 @@ function toneScale(){
   const lo=Math.log(TONE.dLo || TONE.range[0]);
   const hi=Math.log(TONE.dHi || TONE.range[1]);
   const sp=(hi-lo)||1;
-  return { f: f0 => (Math.log(f0)-lo)/sp };
+  /* [검증반영] 범위를 벗어난 값은 화면 가장자리에서 자른다 (Praat과 같은 방식).
+     한두 프레임의 극단값 때문에 나머지 전부가 눌리는 편이 훨씬 나쁘다. */
+  return { f: f0 => Math.max(-0.02, Math.min(1.02, (Math.log(f0)-lo)/sp)) };
 }
 
 /* =========================================================================
@@ -1838,34 +2023,33 @@ function paintProgress(t){
       /* 눈금 없음 — 성조는 선의 모양(오름/내림/평평)으로 읽는다. */
       // 곡선 — 무성 구간에서는 끊어 그린다 (없는 데이터를 만들어내지 않도록)
       const span=c.e-c.s;
-      /* 소리 세기에 따라 선을 3등급으로:
-         35% 이상 = 2.4px 진하게 / 15~35% = 1.9px 반투명 / 15% 미만 = 1.5px 흐리게.
-         약한 소리에서 F0 오류가 급증하므로(옥타브 오류 5~10%대 7.95%),
-         믿을 수 있는 구간만 진하게 보여준다. */
-      const TW_W=[2.4,1.9,1.5], TW_A=[1,.55,.30];
-      const tier=v=> v>=0.35?0 : v>=0.15?1 : 2;
-      const stroke=(rgb,base,x0,x1)=>{
+      /* [검증반영] 진폭이 약한 구간은 흐리고 얇게. 근거는 frameAmp 주석 참조. */
+      const TIER=[{min:.35,a:1,w:2.4},{min:.15,a:.5,w:1.9},{min:0,a:.22,w:1.5}];
+      const tierOf=v=>{ for(let i=0;i<TIER.length;i++) if(v>=TIER[i].min) return i; return 2; };
+      const stroke=(color,x0,x1)=>{
         if(x1<=x0) return;
         g.save(); g.beginPath(); g.rect(x0,0,x1-x0,h); g.clip();
         g.lineJoin='round'; g.lineCap='round';
-        let lx=null, ly=null, li=-1;
-        for(let i=0;i<tw.f0.length;i++){
-          const f0=tw.f0[i]; const tt=tw.off+tw.t[i];
-          if(f0<=0 || tt<c.s || tt>c.e){ lx=null; continue; }
-          const x=PADX+((tt-c.s)/span)*iw, y=yOf(sc.f(f0));
-          if(lx!==null){
-            const av = tw.amp ? Math.min(tw.amp[li]??1, tw.amp[i]??1) : 1;
-            const k = tier(av);
-            g.strokeStyle='rgba('+rgb+','+(base*TW_A[k]).toFixed(2)+')';
-            g.lineWidth=TW_W[k];
-            g.beginPath(); g.moveTo(lx,ly); g.lineTo(x,y); g.stroke();
+        for(let ti=0; ti<TIER.length; ti++){
+          g.strokeStyle=color; g.globalAlpha=TIER[ti].a; g.lineWidth=TIER[ti].w;
+          g.beginPath(); let open=false;
+          for(let i=0;i<tw.f0.length;i++){
+            const f0=tw.f0[i]; const tt=tw.off+tw.t[i];
+            if(f0<=0 || tt<c.s || tt>c.e){ open=false; continue; }
+            const av=tw.amp?tw.amp[i]:1;
+            const mine=tierOf(av)===ti;
+            const nb=(i+1<tw.f0.length&&tw.f0[i+1]>0&&tierOf(tw.amp?tw.amp[i+1]:1)===ti)
+                   ||(i>0&&tw.f0[i-1]>0&&tierOf(tw.amp?tw.amp[i-1]:1)===ti);
+            if(!mine&&!nb){ open=false; continue; }
+            const x=PADX+((tt-c.s)/span)*iw, y=yOf(sc.f(f0));
+            if(open) g.lineTo(x,y); else { g.moveTo(x,y); open=true; }
           }
-          lx=x; ly=y; li=i;
+          g.stroke();
         }
-        g.restore();
+        g.globalAlpha=1; g.restore();
       };
-      stroke('120,132,155', .85, 0, px);
-      stroke('63,211,155', .95, px, w);
+      stroke('rgba(120,132,155,.85)', 0, px);
+      stroke('rgba(63,211,155,.95)', px, w);
       g.strokeStyle='rgba(255,255,255,.85)'; g.lineWidth=1.3;
       g.beginPath(); g.moveTo(px,0); g.lineTo(px,h); g.stroke();
       if(S.playing && !TONE.cache.has(S.si+1)) toneFor(S.si+1);   // 다음 문장 미리 계산
@@ -2151,7 +2335,7 @@ window.addEventListener('drop', e=>{ if(e.dataTransfer.files.length) importFiles
 /* ===== 새 버전 알림 =====
    GitHub에 새 index.html 을 올리면, 앱이 알아채고 아래에 알림을 띄운다.
    누르면 캐시를 비우고 새로 받는다. 불러온 음원과 설정은 그대로 남는다. */
-const APP_VERSION = '20260822-1900';
+const APP_VERSION = '20260824-0830';
 let verChecked = 0;
 
 async function checkUpdate(){
@@ -2233,12 +2417,826 @@ window.addEventListener('pagehide', flushSaves);
     setTimeout(()=>$('#splash').remove(),500); }, 900);
 })();
 
-/* ── PWA: 오프라인 캐시 담당자(sw.js) 등록 ── */
-if('serviceWorker' in navigator){
-  window.addEventListener('load', ()=>{ navigator.serviceWorker.register('./sw.js').catch(()=>{}); });
-}
-/* 저장공간 부족 시에도 음원·설정이 지워지지 않게 보호 요청 */
-if(navigator.storage && navigator.storage.persist){ navigator.storage.persist().catch(()=>{}); }
+
+/* =========================================================================
+   [접합] 대본 5줄 · 콘텐츠 팩 · PWA
+   파트1 엔진(S / goto / load / updateMeta)은 건드리지 않고 바깥에서 붙인다.
+   ========================================================================= */
+(function lineLayer(){
+  'use strict';
+
+  /* ---------- 상태 ----------
+     줄마다 크기가 따로다(최대치도 다르다). 순서도 사용자가 바꾼다 —
+     학습자에 따라 먼저 보고 싶은 줄이 다르기 때문. 메인 화면이 이 순서를 그대로 쓴다. */
+  const LK = 'ongal_lines_v2';
+  const ROWS  = ['tone','pinyin','hanzi','pron','trans'];
+  const MAXSZ = { tone:2, pinyin:3, hanzi:4, pron:3, trans:3 };
+  const DEFAULT_LN = () => ({
+    order:['tone','pinyin','hanzi','pron','trans'],
+    size:{tone:1,pinyin:1,hanzi:1,pron:1,trans:1},
+    show:{tone:1,pinyin:1,hanzi:1,pron:1,trans:1},
+    grid:0, sandhi:1 });
+  const LN = DEFAULT_LN();
+
+  /* 저장값이 깨져 있어도(문자열 크기, 없는 줄 이름, 상한 초과) 기본값으로 살아난다.
+     정규화 없이 두면 렌더에서 던지고, updateMeta 훅의 catch가 삼켜서
+     5줄이 아무 말 없이 사라진다 — 최악의 실패 형태. */
+  function normalize(){
+    const o = Array.isArray(LN.order) ? LN.order.filter(k=>ROWS.includes(k)) : [];
+    const seen = new Set(); const oo = [];
+    for(const k of o) if(!seen.has(k)){ seen.add(k); oo.push(k); }
+    for(const k of ROWS) if(!seen.has(k)) oo.push(k);
+    LN.order = oo;
+    if(!LN.size || typeof LN.size!=='object') LN.size={};
+    if(!LN.show || typeof LN.show!=='object') LN.show={};
+    for(const k of ROWS){
+      let v = Math.round(Number(LN.size[k]));
+      if(!(v>=1)) v = 1;
+      LN.size[k] = Math.min(MAXSZ[k], v);      /* 상한이 내려가면 자동으로 맞춰 내린다 */
+      LN.show[k] = LN.show[k]===0 ? 0 : 1;
+    }
+    LN.grid = LN.grid?1:0; LN.sandhi = LN.sandhi?1:0;
+  }
+  try{
+    const raw = localStorage.getItem(LK);
+    if(raw){ Object.assign(LN, JSON.parse(raw) || {}); }
+    else{                                     /* v1 저장값 이월 */
+      const old1 = JSON.parse(localStorage.getItem('ongal_lines_v1')||'null');
+      if(old1 && typeof old1==='object'){
+        if(old1.show && typeof old1.show==='object') LN.show = Object.assign({}, LN.show, old1.show);
+        LN.grid = old1.grid?1:0; LN.sandhi = old1.sandhi===0?0:1;
+      }
+    }
+  }catch(e){}
+  normalize();
+  const lsave = ()=>{ try{ localStorage.setItem(LK, JSON.stringify(LN)); }catch(e){} };
+
+  /* ---------- 크기 체계 ----------
+     레벨 1이 기존 기본 화면과 같은 크기. 레벨이 오를수록 그 줄만 커진다.
+     성조는 최대 2단계, 한자는 4단계 — 줄마다 상한이 다르다. */
+  const BASE = { pinyin:13, hanzi:20, pron:12, trans:16 };
+  const STEP = [1, 1.3, 1.65, 2.05];
+  const TDIM = [{w:18,h:18,s:1.4},{w:24,h:23,s:1.8}];
+  const TCOL = {1:'#5B9CF6',2:'#3DC9A0',3:'#E8643A',4:'#E870A8',5:'#888888'};
+  const GCOL = {5:'#5B9CF6',4:'#3DC9A0',3:'#E8643A',2:'#E870A8',1:'#888888'};
+  const lv   = k => Math.min(MAXSZ[k], Math.max(1, LN.size[k]|0));
+  const fsOf = k => Math.round(BASE[k] * STEP[lv(k)-1]);
+  const tdim = () => TDIM[lv('tone')-1];
+
+  /* ---------- 성조 기호 (파트2 명세 그대로) ---------- */
+
+  /* 성조 글리프 — 쐐기(wedge) 디자인.
+     굵기가 변하는 면(폴리곤)으로 그린다: 1성 평평한 막대, 2성 가늘게 시작해
+     두꺼워지며 상승, 3성 체크(√) 꺾임, 4성 두껍게 시작해 가늘어지며 하강, 경성 점.
+     단색(잉크색) — 색상 구분 대신 형태·굵기로 방향을 읽는다. */
+  function toneCell(tone, real){
+    const d = tdim();
+    const pad = d.s*1.4, top = pad, ch = d.h - pad*2;
+    const Y = p => top + (5-p)/4*ch;
+    const W = d.w, s = d.s, INK = '#dde4f0';
+    const wedge = (x0,y0,w0,x1,y1,w1)=>{
+      const dx=x1-x0, dy=y1-y0, L=Math.hypot(dx,dy)||1;
+      const nx=-dy/L*.5, ny=dx/L*.5;
+      const p=(x,y)=>x.toFixed(2)+' '+y.toFixed(2);
+      return 'M'+p(x0+nx*w0,y0+ny*w0)+'L'+p(x1+nx*w1,y1+ny*w1)
+           +'L'+p(x1-nx*w1,y1-ny*w1)+'L'+p(x0-nx*w0,y0-ny*w0)+'Z';
+    };
+    const xm = W*0.44;
+    function glyph(t, fill){
+      if(t===1) return '<path d="'+wedge(W*0.04,Y(5),s*1.9, W*0.88,Y(4.85),s*1.15)+'" fill="'+fill+'"/>';
+      if(t===2) return '<path d="'+wedge(W*0.05,Y(2.6),s*0.6, W*0.95,Y(5),s*2.3)+'" fill="'+fill+'"/>';
+      if(t===4) return '<path d="'+wedge(W*0.40,Y(5),s*2.4, W*0.64,Y(1),s*0.55)+'" fill="'+fill+'"/>';
+      if(t===3) return '<path d="'+wedge(W*0.33,Y(2.6),s*1.5, xm,Y(1),s*0.8)+'" fill="'+fill+'"/>'
+                     + '<path d="'+wedge(xm,Y(1),s*0.6, W*0.66,Y(3.9),s*1.9)+'" fill="'+fill+'"/>';
+      return '<circle cx="'+(W/2).toFixed(2)+'" cy="'+Y(2.5).toFixed(2)+'" r="'+(s*1.5).toFixed(2)+'" fill="'+fill+'"/>';
+    }
+    let inner = '';
+    if(LN.grid){
+      const dash = Math.max(2,s*1.6);
+      for(let p=1;p<=5;p++)
+        inner += '<line x1="0" y1="'+Y(p).toFixed(2)+'" x2="'+W+'" y2="'+Y(p).toFixed(2)
+               + '" stroke="'+GCOL[p]+'" stroke-width="'+(s*0.5).toFixed(2)
+               + '" stroke-dasharray="'+dash+' '+dash+'" opacity="0.5"/>';
+    }
+    /* 변조 자리: 실제로 내는 소리를 실선(주인공)으로, 표기 성조를 흐린 점선으로.
+       쉐도잉 도구이므로 화면의 실선은 "따라 해야 할 실제 소리"여야 하고,
+       아래 F0 곡선과도 그래야 방향이 일치한다. */
+    const sandhi = !!(LN.sandhi && real && real !== tone);
+    if(sandhi){
+      const outline = (t2)=>{
+        const dash = ' stroke-dasharray="'+(s*1.5).toFixed(1)+' '+(s*1.3).toFixed(1)+'"'
+                   + ' stroke-width="'+(s*0.8).toFixed(2)+'" fill="none" opacity=".75"';
+        const C = '#7d8aa3';
+        if(t2===1) return '<line x1="'+(W*0.04).toFixed(2)+'" y1="'+Y(5).toFixed(2)+'" x2="'+(W*0.88).toFixed(2)+'" y2="'+Y(5).toFixed(2)+'" stroke="'+C+'"'+dash+'/>';
+        if(t2===2) return '<line x1="'+(W*0.05).toFixed(2)+'" y1="'+Y(2.6).toFixed(2)+'" x2="'+(W*0.95).toFixed(2)+'" y2="'+Y(5).toFixed(2)+'" stroke="'+C+'"'+dash+'/>';
+        if(t2===4) return '<line x1="'+(W*0.40).toFixed(2)+'" y1="'+Y(5).toFixed(2)+'" x2="'+(W*0.64).toFixed(2)+'" y2="'+Y(1).toFixed(2)+'" stroke="'+C+'"'+dash+'/>';
+        if(t2===3) return '<path d="M'+(W*0.33).toFixed(2)+' '+Y(2.6).toFixed(2)+' L'+xm.toFixed(2)+' '+Y(1).toFixed(2)
+                        + ' L'+(W*0.66).toFixed(2)+' '+Y(3.9).toFixed(2)+'" stroke="'+C+'"'+dash+'/>';
+        return '<circle cx="'+(W/2).toFixed(2)+'" cy="'+Y(2.5).toFixed(2)+'" r="'+(s*1.1).toFixed(2)
+             + '" fill="none" stroke="'+C+'" stroke-width="'+(s*0.8).toFixed(2)+'" opacity=".75"/>';
+      };
+      inner += outline(tone);          /* 표기 성조 = 흐린 점선 윤곽 */
+      inner += glyph(real, INK);       /* 실제 발음 = 실선 쐐기 */
+    } else {
+      inner += glyph(tone, INK);
+    }
+    return '<svg width="'+W+'" height="'+d.h+'" viewBox="0 0 '+W+' '+d.h
+         + '" style="display:inline-block;vertical-align:middle">'+inner+'</svg>';
+  }
+
+  /* ---------- 현재 문장의 대본 ---------- */
+  function currentLine(){
+    const f = S.files[S.cur];
+    if(!f || !f.lines) return null;
+    return f.lines[S.si] || null;
+  }
+  const esc = t => String(t==null?'':t).replace(/[&<>]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+
+  /* ---------- 렌더 — 다섯 줄이 한 박스, 순서·크기는 줄마다 따로 ---------- */
+  function renderLines(){
+    const app = document.getElementById('app');
+    const ln  = currentLine();
+    const has = !!(ln && ln.syllables && ln.syllables.length);
+    app.classList.toggle('nolines', !has);
+    document.getElementById('noLines').classList.toggle('hide', has);
+    const wrap = document.getElementById('ltabWrap');
+    wrap.classList.toggle('hide', !has);
+    if(!has){ wrap.innerHTML=''; return; }
+
+    const syOrder = LN.order.filter(k=>k!=='trans');
+    const transTop = LN.order.indexOf('trans') === 0;   /* 뜻이 맨 위면 위로, 아니면 아래로 */
+    const RH={}, FSZ={};
+    for(const k of syOrder){
+      RH[k]  = k==='tone' ? tdim().h : Math.round(fsOf(k)*1.5);
+      FSZ[k] = k==='tone' ? '' : 'font-size:'+fsOf(k)+'px';
+    }
+    const cell = (k,y)=>
+      k==='tone'   ? toneCell(y.tone, y.toneReal)
+    : k==='pinyin' ? '<span class="py">'+esc(y.pinyin)+'</span>'
+    : k==='hanzi'  ? '<b>'+esc(y.hanzi)+'</b><i class="pc">'+esc(y.punct||'')+'</i>'
+    :                '<span class="kr">'+esc(y.pron)+'</span>';
+
+    /* 구두점에서 끊어 호흡 덩어리로 */
+    const segs=[]; let cur=[];
+    for(const y of ln.syllables){ cur.push(y); if(y.punct){ segs.push(cur); cur=[]; } }
+    if(cur.length) segs.push(cur);
+
+    const segT = g => '<table class="lseg"><tbody>' + syOrder.map(k=>
+        '<tr class="lr-'+k+(LN.show[k]?'':' roff')+'" style="height:'+RH[k]+'px;'+FSZ[k]+'">'
+        + g.map(y=>'<td class="'+(y.punct?'brk':'')+'">'+cell(k,y)+'</td>').join('')
+        + '</tr>').join('') + '</tbody></table>';
+
+    const t = (ln.text && ln.text.trans) || '';
+    const transHTML = t ? '<div id="ltrans"><div class="ttx'+(LN.show.trans?'':' roff2')
+           + '" style="font-size:'+fsOf('trans')+'px">'+esc(t)+'</div></div>' : '';
+    const build = list =>
+      '<div id="lrow"><div id="lcol"></div><div id="lbox">'
+      + (transTop ? transHTML : '')
+      + '<div id="lflow">'+list.map(segT).join('')+'</div>'
+      + (transTop ? '' : transHTML)
+      + '</div></div>';
+
+    /* 한 줄 우선: 전체가 한 줄에 들어가면 그대로, 넘치면 호흡 덩어리로 접는다 */
+    wrap.innerHTML = build([ln.syllables]);
+    if(segs.length > 1){
+      const fl = document.getElementById('lflow');
+      if(fl.scrollWidth > fl.clientWidth + 1) wrap.innerHTML = build(segs);
+    }
+    placeChecks(!!t);
+  }
+
+  /* 체크박스를 각 줄의 세로 중앙에 맞춘다 — 줄 높이가 달라도, 여러 줄로 접혀도 어긋나지 않는다 */
+  function placeChecks(hasTrans){
+    const box = document.getElementById('lbox'), col = document.getElementById('lcol');
+    if(!box || !col) return;
+    const bt = box.getBoundingClientRect().top;
+    const first = box.querySelector('table.lseg');
+    const marks = [];
+    for(const k of LN.order){
+      let el = null;
+      if(k === 'trans'){ if(hasTrans) el = box.querySelector('.ttx'); }
+      else if(first) el = first.querySelector('tr.lr-'+k);
+      if(el){ const r = el.getBoundingClientRect(); marks.push([k, r.top - bt + r.height/2]); }
+    }
+    col.innerHTML = marks.map(([k,y])=>
+      '<button class="cb2'+(LN.show[k]?' on':'')+'" data-lk="'+k+'" style="top:'
+      + y.toFixed(1) + 'px" aria-label="'+k+' 줄 표시"><span>✓</span></button>').join('');
+  }
+
+  document.getElementById('ltabWrap').addEventListener('click', e=>{
+    const b = e.target.closest('[data-lk]'); if(!b) return;
+    LN.show[b.dataset.lk] = LN.show[b.dataset.lk] ? 0 : 1;
+    lsave(); renderLines();
+  });
+
+  /* ---------- 엔진 훅: load — 팩 파일은 문장 경계를 대본에서 재구성 ----------
+     엔진의 '다시 분석'이나 ALGO_VER 마이그레이션이 f.sent를 자동 분할로 덮으면
+     대본 5줄과 문장 번호가 어긋난다. 팩 파일을 열 때마다 lines 기준으로 되돌린다. */
+  const _load = load;
+  load = function(i){
+    try{
+      const f = S.files[i];
+      if(f && f.pack && f.lines && f.lines.length){
+        if(f.packMode === 'single'){
+          f.sent = f.lines.map(x=>({ s:+x.t0||0, e:(x.t1!=null && +x.t1>0) ? +x.t1 : f.dur }));
+        } else if(!f.sent || f.sent.length !== 1){
+          f.sent = [{ s:+f.lines[0].t0||0, e:(f.lines[0].t1!=null && +f.lines[0].t1>0) ? +f.lines[0].t1 : f.dur }];
+        }
+      }
+    }catch(e){}
+    return _load.apply(this, arguments);
+  };
+  /* '다시 분석'은 자동 분할용 — 팩 파일에는 의미가 없고 정렬만 깨뜨린다 */
+  document.getElementById('bReanalyze').addEventListener('click', e=>{
+    const f = S.files[S.cur];
+    if(f && f.pack){ e.stopImmediatePropagation(); e.preventDefault();
+      toast('대본이 있는 파일은 문장 경계가 고정되어 있습니다'); }
+  }, true);
+
+  /* ---------- 엔진 훅 — updateMeta가 불릴 때마다 같이 그린다 ---------- */
+  const _updateMeta = updateMeta;
+  updateMeta = function(){
+    _updateMeta.apply(this, arguments);
+    try{
+      renderLines(); renderCards();
+      /* 문장별 음원 팩은 파일 하나 = 문장 하나다. 카운터를 전체 기준으로 고쳐 준다. */
+      const f = S.files[S.cur];
+      if(f && f.packMode === 'per-sentence'){
+        const list = S.files.filter(x=>x.pack === f.pack);
+        const at = list.indexOf(f);
+        if(at >= 0) document.getElementById('sIdx').textContent = (at+1)+' / '+list.length;
+      }
+    }catch(e){ console.warn('대본 렌더 실패:', e); }
+  };
+
+  /* ---------- 칩·설정 ---------- */
+  /* ---------- 설정: 대본 5줄 카드 ---------- */
+  const SAMPLE = { text:{trans:'나는 내일 베이징으로 출장을 갑니다.'}, syllables:[
+    {hanzi:'我',pinyin:'wǒ',pron:'워',tone:3},{hanzi:'明',pinyin:'míng',pron:'밍',tone:2},
+    {hanzi:'天',pinyin:'tiān',pron:'티엔',tone:1},{hanzi:'要',pinyin:'yào',pron:'야오',tone:4},
+    {hanzi:'去',pinyin:'qù',pron:'취',tone:4},{hanzi:'北',pinyin:'běi',pron:'베이',tone:3},
+    {hanzi:'京',pinyin:'jīng',pron:'징',tone:1},{hanzi:'出',pinyin:'chū',pron:'추',tone:1},
+    {hanzi:'差',pinyin:'chāi',pron:'차이',tone:1,punct:'。'}]};
+
+  function previewHTML(k, ln){
+    if(k === 'trans') return '<span style="font-size:'+fsOf('trans')+'px">'
+      + esc((ln.text && ln.text.trans) || '') + '</span>';
+    /* 카드 폭이 좁으면 앞의 몇 개만 — 뒤는 마스크로 흐려진다 */
+    return ln.syllables.slice(0, 14).map(y=>{
+      if(k === 'tone') return '<span class="sy">'+toneCell(y.tone, y.toneReal)+'</span>';
+      const cls = k==='hanzi' ? 'b' : (k==='pinyin' ? 'py' : 'kr');
+      const inner = k==='hanzi' ? '<b>'+esc(y.hanzi)+'</b>'
+                  : '<span class="'+cls+'">'+esc(k==='pinyin'?y.pinyin:y.pron)+'</span>';
+      return '<span class="sy" style="font-size:'+fsOf(k)+'px">'+inner+'</span>';
+    }).join('');
+  }
+
+  function renderCards(){
+    const box = document.getElementById('lcards');
+    if(!box) return;
+    const ln = currentLine() || SAMPLE;
+    box.innerHTML = LN.order.map((k,i)=>{
+      const sz = lv(k), mx = MAXSZ[k];
+      const extra = k==='tone'
+        ? '<button class="ltog'+(LN.grid?' on':'')+'" data-tg="grid">5선</button>'
+        + '<button class="ltog'+(LN.sandhi?' on':'')+'" data-tg="sandhi">변조</button>' : '';
+      return '<div class="lcard" data-k="'+k+'" data-i="'+i+'">'
+        + '<button class="cb2'+(LN.show[k]?' on':'')+'" data-lk="'+k+'"><span>✓</span></button>'
+        + '<div class="lprev">'+previewHTML(k, ln)+'</div>'
+        + extra
+        + '<div class="lsz">'
+        +   '<button data-sz="'+k+'" data-d="-1"'+(sz<=1?' disabled':'')+'>−</button>'
+        +   '<b>'+sz+'<i>/'+mx+'</i></b>'
+        +   '<button data-sz="'+k+'" data-d="1"'+(sz>=mx?' disabled':'')+'>+</button>'
+        + '</div></div>';
+    }).join('');
+  }
+
+  document.getElementById('lcards').addEventListener('click', e=>{
+    const cb = e.target.closest('[data-lk]');
+    if(cb){ LN.show[cb.dataset.lk] = LN.show[cb.dataset.lk] ? 0 : 1;
+            lsave(); renderCards(); renderLines(); return; }
+    const tg = e.target.closest('[data-tg]');
+    if(tg){ LN[tg.dataset.tg] = LN[tg.dataset.tg] ? 0 : 1;
+            lsave(); renderCards(); renderLines(); return; }
+    const sz = e.target.closest('[data-sz]');
+    if(sz){ const k = sz.dataset.sz;
+            LN.size[k] = Math.min(MAXSZ[k], Math.max(1, lv(k) + (+sz.dataset.d)));
+            lsave(); renderCards(); renderLines(); }
+  });
+
+  document.getElementById('bLdefault').onclick = ()=>{
+    Object.assign(LN, DEFAULT_LN()); normalize(); lsave();
+    renderCards(); renderLines(); toast('대본 5줄을 기본값으로 되돌렸습니다');
+  };
+
+  /* 길게 눌러 순서 변경 — 카드 높이가 같으므로 이동 칸 수는 거리/높이로 구한다 */
+  (function reorder(){
+    const box = document.getElementById('lcards');
+    const banner = document.getElementById('lcBanner');
+    const scroll = document.getElementById('shSet').querySelector('.sbody');
+    let timer=null, active=false, card=null, startY=0, from=0, hover=0, others=[], H=70, centers=[];
+
+    function end(commit){
+      clearTimeout(timer); timer=null;
+      if(active){
+        banner.classList.remove('on');
+        if(scroll) scroll.style.overflowY='auto';
+        if(card){ card.classList.remove('drag'); card.style.transform=''; }
+        others.forEach(o=>{ o.el.style.transform=''; });
+        if(commit && hover!==from){
+          const o = LN.order.slice();
+          o.splice(hover, 0, o.splice(from,1)[0]);
+          LN.order = o; lsave(); renderCards(); renderLines();
+        }
+      }
+      active=false; card=null; others=[];
+    }
+    box.addEventListener('pointerdown', e=>{
+      const c = e.target.closest('.lcard');
+      if(!c || e.target.closest('button')) return;
+      card=c; startY=e.clientY;
+      const list=[...box.querySelectorAll('.lcard')];
+      from=list.indexOf(c); hover=from;
+      timer=setTimeout(()=>{
+        active=true;
+        if(navigator.vibrate && S.haptic) navigator.vibrate(40);
+        /* 카드 높이는 줄 크기에 따라 제각각이다 — 거리 나눗셈 대신
+           드래그 중인 카드의 중심이 어느 카드들을 지났는지로 목표 자리를 정한다. */
+        centers = list.map(el=>{ const r=el.getBoundingClientRect(); return r.top + r.height/2; });
+        H = c.getBoundingClientRect().height + 8;
+        card.classList.add('drag');
+        try{ card.setPointerCapture(e.pointerId); }catch(err){}
+        banner.classList.add('on');
+        if(scroll) scroll.style.overflowY='hidden';
+        others=list.filter(el=>el!==card).map(el=>({el, idx:list.indexOf(el)}));
+      }, 700);
+    });
+    box.addEventListener('pointermove', e=>{
+      if(!active){ if(timer && Math.abs(e.clientY-startY)>8){ clearTimeout(timer); timer=null; } return; }
+      e.preventDefault();
+      const dy = e.clientY - startY;
+      card.style.transform = 'translateY('+dy+'px)';
+      const mid = centers[from] + dy;
+      let idx = 0;
+      for(let i=0;i<centers.length;i++){ if(i!==from && centers[i] < mid) idx++; }
+      if(idx!==hover){ hover=idx; if(navigator.vibrate && S.haptic) navigator.vibrate(8); }
+      others.forEach(o=>{
+        let sh=0;
+        if(from<hover && o.idx>from && o.idx<=hover) sh=-H;
+        else if(from>hover && o.idx<from && o.idx>=hover) sh=H;
+        o.el.style.transform = sh ? 'translateY('+sh+'px)' : '';
+      });
+    }, {passive:false});
+    box.addEventListener('pointerup', ()=>end(true));
+    box.addEventListener('pointercancel', ()=>end(false));
+    window.addEventListener('contextmenu', e=>{ if(active) e.preventDefault(); });
+  })();
+
+  /* =======================================================================
+     콘텐츠 팩
+     audioMode:'per-sentence' → 문장마다 파일 하나 (하단 휠이 문장 목록이 된다)
+     audioMode:'single'       → 파일 하나에 t0/t1 구간 여러 개 (기존 찍찍이 방식)
+     둘 다 S.sent / S.si 로 흡수되므로 재생·반복·NEXT는 같은 코드를 쓴다.
+     ======================================================================= */
+  async function getPack(){
+    if(window.__PACK__) return window.__PACK__;
+    const r = await fetch('./pack.json', {cache:'no-store'});
+    if(!r.ok) throw new Error('pack.json '+r.status);
+    return r.json();
+  }
+  function speakerTone(sp){
+    if(!sp || !sp.floor || !sp.ceiling) return null;
+    const p2 = sp.p2 || sp.floor, p98 = sp.p98 || sp.ceiling;
+    return { v:5, range:[sp.floor, sp.ceiling], median: sp.median || 0, p2, p98,
+             dLo: Math.max(sp.floor,  p2*0.90),
+             dHi: Math.min(sp.ceiling, p98*1.11) };
+  }
+
+  let packBusy = false;
+  async function openPack(){
+    if(packBusy) return; packBusy = true;
+    const btn = document.getElementById('bPack');
+    const old = btn.textContent; btn.textContent = '읽는 중…'; btn.disabled = true;
+    try{
+      const pk = await getPack();
+      if(S.files.some(f=>f.pack === pk.id)){ toast('이미 불러온 팩입니다'); return; }
+      const tone = speakerTone(pk.speaker);
+      const mode = pk.audioMode === 'single' ? 'single' : 'per-sentence';
+      const made = [];
+
+      if(mode === 'single'){
+        const one = pk.sentences[0];
+        const blob = await (await fetch(one.audio)).blob();
+        const d = await decodeEnvelope(blob);
+        const rec = { id:'pk_'+pk.id, name: pk.title || pk.id, blob, dur:d.dur, env:d.env, hop:d.hop,
+                      pcm:d.pcm, psr:d.sr, ver:ALGO_VER, tlen:S.tlen, sel:true, last:0,
+                      pack:pk.id, packMode:mode, lines: pk.sentences,
+                      sent: pk.sentences.map(x=>({s:+x.t0||0, e:+x.t1||d.dur})) };
+        if(tone) rec.tone = tone;
+        made.push(rec);
+      } else {
+        for(let i=0;i<pk.sentences.length;i++){
+          const x = pk.sentences[i];
+          const blob = await (await fetch(x.audio)).blob();
+          const d = await decodeEnvelope(blob);
+          const rec = { id:'pk_'+pk.id+'_'+(x.id||i), name:(x.text&&x.text.hanzi)||('문장 '+(i+1)),
+                        blob, dur:d.dur, env:d.env, hop:d.hop, pcm:d.pcm, psr:d.sr,
+                        ver:ALGO_VER, tlen:S.tlen, sel:true, last:0,
+                        pack:pk.id, packMode:mode, lines:[x],
+                        sent:[{ s:+x.t0||0, e:(x.t1!=null? +x.t1 : d.dur) }] };
+          if(tone) rec.tone = tone;
+          made.push(rec);
+        }
+      }
+      const first = S.files.length;
+      for(const r of made){ S.files.push(r); try{ await DB.putFile(r); }catch(e){} }
+      renderFileList(); renderWheel();
+      load(first, true);
+      closeSheet('#shSet');                     /* 설정 시트에서 눌렀다면 닫는다 (안 열려 있어도 무해) */
+      toast(mode==='single' ? (made[0].sent.length+'개 문장을 불러왔습니다')
+                            : (made.length+'개 문장을 불러왔습니다'));
+    }catch(e){
+      console.warn('openPack 실패:', e);
+      toast('팩을 읽지 못했습니다 — 웹서버로 열었는지 확인하세요');
+    }finally{
+      btn.textContent = old; btn.disabled = false; packBusy = false;
+    }
+  }
+  document.getElementById('bPack').onclick = openPack;
+
+  /* 처음 실행이고 저장된 파일이 없으면 기본 팩을 자동으로 연다.
+     고정 1.4초 대기는 저장분 복원이 그보다 느린 기기에서 중복 적재를 일으킨다
+     (복원 전에 files=0으로 보임). 부트 완료 신호(resetUI/load 첫 호출)를 기다린다. */
+  let bootSeen = false;
+  const _resetUI = resetUI;
+  resetUI = function(){ bootSeen = true; return _resetUI.apply(this, arguments); };
+  const _load2 = load;
+  load = function(){ bootSeen = true; return _load2.apply(this, arguments); };
+  (function autoPack(t0){
+    if(bootSeen || Date.now()-t0 > 10000){
+      if(S.files.length === 0) openPack();
+      return;
+    }
+    setTimeout(()=>autoPack(t0), 150);
+  })(Date.now());
+
+  /* ---------- PWA ---------- */
+  const instTxt = document.getElementById('instTxt');
+  const instBtn = document.getElementById('bInstall');
+  let dp = null;
+  const standalone = matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+  if(standalone){ instTxt.textContent = '이미 설치된 앱으로 실행 중입니다'; }
+  else instTxt.textContent = '브라우저가 준비되면 버튼이 켜집니다';
+  addEventListener('beforeinstallprompt', e=>{
+    e.preventDefault(); dp = e;
+    instBtn.disabled = false; instTxt.textContent = '홈 화면에 추가하면 오프라인으로 열립니다';
+  });
+  instBtn.onclick = async ()=>{
+    if(!dp) return;
+    dp.prompt(); await dp.userChoice; dp = null;
+    instBtn.disabled = true; instTxt.textContent = '설치를 마쳤습니다';
+  };
+  addEventListener('appinstalled', ()=>{ instBtn.disabled = true; instTxt.textContent = '설치됨'; });
+
+  if('serviceWorker' in navigator && location.protocol !== 'file:'){
+    addEventListener('load', ()=> navigator.serviceWorker.register('./sw.js').catch(()=>{}));
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════════
+     자막(srt) — 음원과 이름이 같은 자막을 붙인다.
+
+     브라우저는 폴더를 스스로 뒤질 수 없다. 그래서 "이름이 같으면 자동으로"는
+     사용자가 폴더를 통째로 열어 준 그 순간에만 성립한다. 폴더 버튼이 그 통로다.
+     (음원과 자막을 같이 고르거나, 나중에 자막만 추가로 골라도 똑같이 붙는다.)
+
+     자막의 시각은 문장 경계로도 쓴다. 사람이 끊어 준 자리가 소리 크기로
+     추측한 자동 분할보다 정확하기 때문이다. 자막을 끄면 자동 분할로 돌아간다.
+     ═══════════════════════════════════════════════════════════════════════ */
+
+  /* srt / vtt 를 읽는다. 번호 줄 없는 파일, 시:분:초가 아닌 분:초,
+     쉼표 대신 마침표, <i> 같은 서식, {\an8} 같은 위치 지시자를 모두 견딘다. */
+  function parseSRT(text){
+    const s = String(text || '').replace(/^﻿/, '').replace(/\r\n?/g, '\n');
+    const TC = /(?:(\d{1,3}):)?(\d{1,2}):(\d{2})[,.](\d{1,3})[ \t]*-->[ \t]*(?:(\d{1,3}):)?(\d{1,2}):(\d{2})[,.](\d{1,3})/g;
+    const hits = []; let m;
+    while((m = TC.exec(s))) hits.push({ g: m, at: m.index, end: TC.lastIndex });
+    const secs = (h, mi, se, ms) =>
+      (+(h || 0)) * 3600 + (+mi) * 60 + (+se) + (+String(ms).padEnd(3, '0')) / 1000;
+    const out = [];
+    for(let k = 0; k < hits.length; k++){
+      const g = hits[k].g;
+      let body = s.slice(hits[k].end, k + 1 < hits.length ? hits[k + 1].at : s.length);
+      body = body.replace(/^[^\n]*\n?/, '');            // 시각 줄에 남은 꼬리
+      /* 자막 본문은 시각 줄 다음부터 '빈 줄'까지다. 빈 줄 뒤에 오는 것은
+         다음 자막의 번호 줄이므로 본문이 아니다. 정규식으로 끝의 숫자를 지우려 하면
+         본문이 숫자 하나뿐인 자막("42")과, 본문이 비어 다음 번호만 남은 자막을
+         구별하지 못한다. 그래서 규격 그대로 빈 줄에서 끊는다. */
+      /* 줄바꿈은 살린다. 병음 한 줄 / 간체 한 줄로 쓴 자막을 한 줄로 이어붙이면
+         읽을 수가 없다. 자막이 나눠 놓은 대로 그대로 보여준다. */
+      const txt = [];
+      for(const ln of body.split('\n')){
+        if(!ln.trim()) break;
+        const one = ln.replace(/<[^>]*>/g, '').replace(/\{[^}]*\}/g, '')
+                      .replace(/[ \t]+/g, ' ').trim();
+        if(one) txt.push(one);
+      }
+      const a = secs(g[1], g[2], g[3], g[4]), b = secs(g[5], g[6], g[7], g[8]);
+      if(!(b > a) || !txt.length) continue;
+      out.push({ s: a, e: b, t: txt });
+    }
+    out.sort((x, y) => x.s - y.s);
+    return out;
+  }
+
+  /* 자막 구간 → 문장 경계. 겹치면 뒤로 밀고, 파일 길이를 넘지 않게 자른다. */
+  function sentFromCues(cues, dur){
+    const lim = dur > 0 ? dur : Infinity, out = [];
+    for(const c of cues){
+      let a = Math.max(0, c.s), b = Math.min(lim, c.e);
+      if(out.length && a < out[out.length - 1].e) a = out[out.length - 1].e;
+      if(b - a < 0.15) continue;
+      out.push({ s: a, e: b });
+    }
+    return out.length ? out : null;
+  }
+
+  const baseName = n => String(n || '').replace(/\.[^.]+$/, '').trim().toLowerCase();
+  /* 2 = 이름이 똑같다.  1 = 뒤에 언어 꼬리가 붙었다 (lesson1.zh.srt ↔ lesson1.mp3).
+     '-'나 '_'는 일부러 안 본다 — lesson1-2.srt 가 lesson1.mp3 에 붙어 버린다. */
+  const subScore = (aud, sub) => sub === aud ? 2 : (sub.startsWith(aud + '.') ? 1 : 0);
+
+  function applySub(f, p){
+    const sent = sentFromCues(p.cues, f.dur);
+    if(!sent) return false;
+    if(!f.sentAuto) f.sentAuto = f.sent;      // 끄면 돌아갈 자리를 남겨 둔다
+    f.srt = { name: p.name, cues: p.cues };
+    f.sent = sent; f.last = 0; f.skip = {};   // 문장 번호가 바뀐다
+    DB.putFile(f);
+    return true;
+  }
+  function dropSub(f){
+    if(!f || !f.srt) return;
+    f.srt = null;
+    if(f.sentAuto){ f.sent = f.sentAuto; f.sentAuto = null; }
+    f.last = 0; f.skip = {};
+    DB.putFile(f);
+  }
+
+  /* 긴 안내는 2.1초 만에 사라지면 읽을 수가 없다. 길이에 맞춰 더 띄운다. */
+  const _toast = toast;
+  toast = function(msg){
+    _toast.apply(this, arguments);
+    const s = String(msg == null ? '' : msg);
+    if(s.length > 34){
+      const t = document.getElementById('toast');
+      clearTimeout(t._h);
+      t._h = setTimeout(() => t.classList.remove('on'), Math.min(9000, 2100 + s.length * 70));
+    }
+  };
+
+  /* 자막 파일의 글자 인코딩은 제각각이다. UTF-8 로만 읽으면 한글 자막이 통째로
+     깨지고, 그러면 시각 줄까지 못 찾아 "자막이 없는 것"처럼 조용히 사라진다. */
+  async function readSubText(file){
+    const buf = new Uint8Array(await file.arrayBuffer());
+    if(buf[0] === 0xFF && buf[1] === 0xFE) return new TextDecoder('utf-16le').decode(buf);
+    if(buf[0] === 0xFE && buf[1] === 0xFF) return new TextDecoder('utf-16be').decode(buf);
+    let nul = 0;
+    for(let i = 0; i < Math.min(400, buf.length); i++) if(buf[i] === 0) nul++;
+    if(nul > 40){                                     // BOM 없는 UTF-16
+      try{ return new TextDecoder('utf-16le').decode(buf); }catch(e){}
+    }
+    let t = new TextDecoder('utf-8').decode(buf);
+    if(/\uFFFD/.test(t)){                             // 깨졌으면 완성형(EUC-KR)으로 재시도
+      try{
+        const k = new TextDecoder('euc-kr').decode(buf);
+        if(!/\uFFFD/.test(k)) t = k;
+      }catch(e){}
+    }
+    return t;
+  }
+
+  /* 자막 파일들을 음원에 짝지어 붙인다. 한 음원에 여러 자막이 걸리면 더 잘 맞는 쪽. */
+  async function attachSubs(subFiles, pool){
+    const parsed = [], unread = [];
+    for(const sf of subFiles){
+      let cues = [];
+      try{ cues = parseSRT(await readSubText(sf)); }
+      catch(e){ console.warn('자막 읽기 실패:', sf.name, e); }
+      if(!cues.length){ unread.push(sf.name); continue; }
+      parsed.push({ name: sf.name, base: baseName(sf.name), cues });
+    }
+    const pick = new Map();                    // 음원 id → {score, p}
+    const orphan = [];
+    for(const p of parsed){
+      let best = null, bs = 0;
+      for(const f of pool){
+        if(f.pack) continue;                   // 팩 파일은 대본이 이미 경계다
+        const sc = subScore(baseName(f.name), p.base);
+        if(sc > bs){ bs = sc; best = f; }
+      }
+      if(!best){ orphan.push(p.name); continue; }
+      const cur = pick.get(best.id);
+      if(!cur || bs > cur.score) pick.set(best.id, { score: bs, p, f: best });
+    }
+    let n = 0; const touched = new Set(), tooShort = [];
+    for(const { p, f } of pick.values()){
+      if(applySub(f, p)){ n++; touched.add(f.id); }
+      else tooShort.push(p.name);              // 자막 시각이 음원 길이 밖 → 쓸 수 없다
+    }
+    /* 자막이 안 붙은 음원 — 사용자가 가장 궁금해하는 것 */
+    const noSub = pool.filter(f => !f.pack && !f.srt).map(f => f.name);
+    return { n, orphan, unread, tooShort, noSub, touched, read: parsed.length };
+  }
+
+  /* ---------- 엔진 훅: importFiles — 자막도 같이 받는다 ---------- */
+  const _importFiles = importFiles;
+  importFiles = async function(list){
+    const all = Array.from(list || []);
+    const subs = all.filter(f => /\.(srt|vtt)$/i.test(f.name));
+    /* 자막을 먼저 빼고 음원을 고른다. 'audiobook.srt'처럼 이름에 audio 가 든 자막이
+       음원 판별(/audio/)에도 걸려 디코더로 들어가면 '읽을 수 없는 파일' 오탐이 난다. */
+    const auds = all.filter(f => !subs.includes(f) &&
+                                 /audio|\.mp3$|\.m4a$|\.wav$|\.ogg$/i.test(f.type + f.name));
+    /* srt·vtt 말고도 자막처럼 생긴 것들. 조용히 무시하지 않고 형식을 알려 준다. */
+    const alien = all.filter(f => /\.(smi|ass|ssa|sub|sbv|lrc)$/i.test(f.name)).map(f => f.name);
+
+    if(!auds.length && subs.length){                    // 자막만 골랐다 → 이미 있는 파일에 붙인다
+      if(!S.files.length){ toast('먼저 음원을 불러오세요'); return; }
+      const r = await attachSubs(subs, S.files);
+      afterSubs(Object.assign(r, { alien }));
+      return;
+    }
+    if(!auds.length){
+      if(alien.length){ toast('아직 못 읽는 자막 형식입니다 (srt·vtt만 됩니다): ' + alien[0]); return; }
+      return _importFiles.call(this, all);              // 원래 안내 그대로
+    }
+
+    const before = S.files.length;
+    await _importFiles.call(this, auds);
+    const added = S.files.slice(before);
+    if(subs.length || alien.length){
+      /* 음원이 하나도 안 들어왔어도(전부 손상 등) 자막을 조용히 버리지 않는다 —
+         이미 들어와 있는 파일에라도 짝을 찾아 준다. */
+      const pool = added.length ? added : S.files;
+      if(pool.length){
+        const r = await attachSubs(subs, pool);
+        afterSubs(Object.assign(r, { alien }));
+      }
+    }
+  };
+
+  function afterSubs(r){
+    renderFileList(); renderWheel();
+    /* 지금 열려 있는 파일이 바뀐 경우에만 다시 연다.
+       무턱대고 load 하면 다른 파일을 듣던 자리가 처음으로 되돌아간다. */
+    const cur = S.files[S.cur];
+    if(cur && r.touched && r.touched.has(cur.id)) load(S.cur);
+
+    /* 자막이 왜 안 붙었는지를 말해 준다. 아무 말 없이 하나만 붙어 있으면
+       사용자는 파일 문제인지 앱 문제인지 알 길이 없다. */
+    const few = a => a.slice(0, 2).join(', ') + (a.length > 2 ? ' 외 ' + (a.length - 2) + '개' : '');
+    const why = [];
+    if(r.alien && r.alien.length)     why.push('srt·vtt 아님 ' + few(r.alien));
+    if(r.unread && r.unread.length)   why.push('읽지 못함 ' + few(r.unread));
+    if(r.orphan && r.orphan.length)   why.push('짝 없는 자막 ' + few(r.orphan));
+    if(r.tooShort && r.tooShort.length) why.push('시각이 음원 밖 ' + few(r.tooShort));
+    if(r.noSub && r.noSub.length)     why.push('자막 없는 음원 ' + few(r.noSub));
+    if(why.length) console.warn('자막 붙이기 결과 —', { 붙임: r.n, ...r });
+
+    if(r.n && why.length)      toast('자막 ' + r.n + '개 붙임 · ' + why.join(' · '));
+    else if(r.n)               toast('자막 ' + r.n + '개를 붙였습니다');
+    else if(why.length)        toast('자막을 붙이지 못했습니다 — ' + why.join(' · '));
+  }
+
+  /* ---------- 폴더째 열기 ---------- */
+  document.getElementById('fDir').onclick = () => document.getElementById('pickDir').click();
+  document.getElementById('pickDir').onchange = e => {
+    const fl = Array.from(e.target.files || []); e.target.value = '';
+    const subs = fl.filter(f => /\.(srt|vtt)$/i.test(f.name));
+    const auds = fl.filter(f => !subs.includes(f) &&
+                                /audio|\.mp3$|\.m4a$|\.wav$|\.ogg$/i.test(f.type + f.name));
+    /* 자막만 든 폴더도 받는다 — 음원을 먼저 넣고 자막 폴더를 나중에 여는 사용법. */
+    if(!auds.length && !subs.length){ toast('폴더 안에 음원이 없습니다'); return; }
+    if(auds.length > 80) toast('음원 ' + auds.length + '개 — 시간이 걸립니다');
+    importFiles(fl);
+  };
+
+  /* ---------- 자막 띠 ---------- */
+  const CAP = { cues: null, k: -2, on: null };
+  /* 예전에 저장해 둔 파일은 t 가 문자열 하나였다. 둘 다 읽는다. */
+  const capLines = c => Array.isArray(c.t) ? c.t : (c.t ? [String(c.t)] : []);
+  function capSet(f){
+    const band = document.getElementById('wCap'), tx = document.getElementById('capTx');
+    CAP.cues = (f && f.srt && f.srt.cues && f.srt.cues.length) ? f.srt.cues : null;
+    CAP.k = -2; CAP.on = null;
+    band.classList.toggle('on', !!CAP.cues);
+    tx.innerHTML = '';
+    if(CAP.cues){
+      /* 띠 높이는 그 파일에서 가장 줄이 많은 자막에 맞춰 미리 잡아 둔다.
+         자막마다 높이가 달라지면 재생 중에 아래 화면이 계속 위아래로 흔들린다. */
+      let mx = 1;
+      for(const c of CAP.cues) mx = Math.max(mx, capLines(c).length);
+      tx.style.setProperty('--capn', Math.min(mx, 3));
+    }
+    requestAnimationFrame(() => { window.place && window.place(); });
+  }
+  /* 지금 시각이 걸친 자막. 자막과 자막 사이(무음)면 직전 것을 흐리게 남긴다 —
+     비워 버리면 문장이 넘어갈 때마다 띠가 깜빡인다. */
+  function capAt(t){
+    const c = CAP.cues;
+    let lo = 0, hi = c.length - 1, k = -1;
+    while(lo <= hi){ const m = (lo + hi) >> 1; if(c[m].s <= t){ k = m; lo = m + 1; } else hi = m - 1; }
+    if(k < 0) return { k: 0, on: false };
+    return { k, on: t < c[k].e };
+  }
+  (function capLoop(){
+    requestAnimationFrame(capLoop);
+    if(!CAP.cues) return;
+    let t = 0;
+    try{ t = P.time(); }catch(e){ return; }
+    const a = capAt(t);
+    if(a.k === CAP.k && a.on === CAP.on) return;      // 바뀔 때만 그린다
+    CAP.k = a.k; CAP.on = a.on;
+    const el = document.getElementById('capTx');
+    el.innerHTML = capLines(CAP.cues[a.k]).slice(0, 3)
+                     .map(x => '<div class="cl">' + esc(x) + '</div>').join('');
+    el.classList.toggle('off', !a.on);
+  })();
+
+  /* ---------- 엔진 훅: load — 자막 경계 되살리기 + 띠 갱신 ---------- */
+  const _loadS = load;
+  load = function(i){
+    try{
+      const f = S.files[i];
+      /* 복원 시 ALGO_VER 마이그레이션이나 '다시 분석'이 경계를 덮었을 수 있다 */
+      if(f && f.srt && f.srt.cues){
+        const sc = sentFromCues(f.srt.cues, f.dur);
+        if(sc) f.sent = sc;
+      }
+    }catch(e){ console.warn('자막 경계 복원 실패:', e); }
+    const r = _loadS.apply(this, arguments);
+    try{ capSet(S.files[i]); }catch(e){ console.warn('자막 띠 갱신 실패:', e); }
+    return r;
+  };
+  const _resetUIS = resetUI;
+  resetUI = function(){ try{ capSet(null); }catch(e){} return _resetUIS.apply(this, arguments); };
+
+  /* '다시 분석'은 자동 분할용 — 자막이 붙은 파일은 자막이 곧 경계다 */
+  document.getElementById('bReanalyze').addEventListener('click', e => {
+    const f = S.files[S.cur];
+    if(f && f.srt){ e.stopImmediatePropagation(); e.preventDefault();
+      toast('자막이 문장 경계입니다 — 끄면 자동 분할로 돌아갑니다'); }
+  }, true);
+
+  /* ---------- 파일 목록에 자막 표시 · 끄기 ---------- */
+  let subArm = null, subArmT = null;
+  const _renderFileList = renderFileList;
+  renderFileList = function(){
+    const r = _renderFileList.apply(this, arguments);
+    try{
+      const items = document.querySelectorAll('#fList .item');
+      /* 자막을 쓰는 중일 때만 '자막 없음'을 적는다. 아무도 자막을 안 쓰면 군더더기고,
+         하나라도 붙어 있으면 "이 파일은 왜 없지?"의 답이 바로 그 자리에 있어야 한다. */
+      const anySub = S.files.some(f => f.srt);
+      S.files.forEach((f, i) => {
+        const el = items[i]; if(!el) return;
+        if(!f.srt){
+          if(anySub && !f.pack){
+            const s0 = el.querySelector('.sub');
+            if(s0) s0.textContent += ' · 자막 없음';
+          }
+          return;
+        }
+        const sub = el.querySelector('.sub');
+        if(sub) sub.textContent += ' · 자막 ' + f.srt.cues.length + '줄';
+        const b = document.createElement('button');
+        b.className = 'subchip'; b.textContent = '자막 끄기';
+        b.onclick = ev => {
+          ev.stopPropagation();
+          if(subArm !== f.id){
+            subArm = f.id; clearTimeout(subArmT);
+            subArmT = setTimeout(() => { subArm = null; }, 3000);
+            toast('한 번 더 누르면 자막을 끕니다'); return;
+          }
+          subArm = null; clearTimeout(subArmT);
+          dropSub(f); renderFileList(); renderWheel();
+          /* 끈 파일이 지금 듣는 파일일 때만 다시 연다.
+             남의 자막을 껐다고 듣던 파일이 처음으로 되감기면 안 된다. */
+          if(S.cur >= 0 && S.files[S.cur] === f) load(S.cur);
+          toast('자막을 껐습니다 — 자동 분할로 돌아갑니다');
+        };
+        el.insertBefore(b, el.querySelector('.x'));
+      });
+    }catch(e){ console.warn('자막 표시 실패:', e); }
+    return r;
+  };
+
+  /* ---------- 시작 ---------- */
+  renderCards(); renderLines();
+  addEventListener('resize', renderLines);
+})();
+
 </script>
 </body>
 </html>

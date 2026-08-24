@@ -1,56 +1,51 @@
-/* 옹알옹알 서비스 워커 — 캐시 우선(오프라인 보장)
-   배포할 때마다 아래 버전 문자열을 바꿀 것 (index.html의 APP_VERSION과 맞추면 편함) */
-const CACHE = 'ongal-20260822-1900';
+/* 옹알옹알 — 오프라인 서비스워커
+   CORE: 없으면 앱이 안 열린다 → 하나라도 실패하면 설치를 실패시킨다
+   EXTRA: 없어도 앱은 열린다 → 각각 따로 시도하고 실패해도 넘어간다
+   (한 묶음 addAll이면 아이콘 하나 빠져도 오프라인이 통째로 죽는다) */
+const CACHE_NAME = 'ongal-20260824-0830';
 
-const ASSETS = [
-  './',
-  './index.html',
-  './manifest.webmanifest',
-  './icon-192.png',
-  './icon-512.png',
-  './icon-maskable-512.png',
-  './apple-touch-icon.png',
-  './favicon-64.png'
+const CORE = ['./', './index.html', './manifest.webmanifest'];
+
+const EXTRA = [
+  './icon-192.png', './icon-512.png', './icon-maskable-512.png',
+  './apple-touch-icon.png', './favicon-64.png',
+  './pack.json', './audio/all.mp3'
 ];
 
-self.addEventListener('install', (e) => {
-  e.waitUntil(
-    caches.open(CACHE).then((c) => c.addAll(ASSETS)).then(() => self.skipWaiting())
-  );
+self.addEventListener('install', e => {
+  e.waitUntil((async () => {
+    const c = await caches.open(CACHE_NAME);
+    await c.addAll(CORE);
+    await Promise.all(EXTRA.map(u => c.add(u).catch(() => {})));
+    await self.skipWaiting();
+  })());
 });
 
-self.addEventListener('activate', (e) => {
-  e.waitUntil(
-    caches.keys()
-      .then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))))
-      .then(() => self.clients.claim())
-  );
+self.addEventListener('activate', e => {
+  e.waitUntil(caches.keys()
+    .then(ks => Promise.all(ks.filter(k => k !== CACHE_NAME).map(k => caches.delete(k))))
+    .then(() => self.clients.claim()));
 });
 
-self.addEventListener('fetch', (e) => {
-  if (e.request.method !== 'GET') return;
-  const url = new URL(e.request.url);
+self.addEventListener('fetch', e => {
+  const req = e.request;
+  if (req.method !== 'GET') return;
 
-  /* 앱의 "새 버전 확인"(?nocache=...)은 반드시 네트워크로 —
-     캐시로 답하면 새 버전 알림이 영영 뜨지 않는다 */
-  if (url.searchParams.has('nocache')) {
-    e.respondWith(fetch(e.request).catch(() => caches.match('./index.html')));
+  /* 새 버전 확인 요청은 캐시를 건너뛴다 — 없으면 영원히 "최신"이라고 답한다 */
+  let u = null; try { u = new URL(req.url); } catch (err) {}
+  if (u && u.searchParams.has('nocache')) return;
+
+  if (req.mode === 'navigate') {
+    e.respondWith(caches.match('./index.html').then(c => c || fetch(req)));
     return;
   }
-
-  /* 그 외: 캐시 먼저(오프라인 보장), 온라인이면 뒤에서 최신본으로 조용히 갱신 */
-  e.respondWith(
-    caches.match(e.request, { ignoreSearch: true }).then((cached) => {
-      const network = fetch(e.request)
-        .then((res) => {
-          if (res && res.ok && url.origin === self.location.origin) {
-            const copy = res.clone();
-            caches.open(CACHE).then((c) => c.put(e.request, copy));
-          }
-          return res;
-        })
-        .catch(() => cached);
-      return cached || network;
-    })
-  );
+  e.respondWith(caches.match(req).then(c => {
+    if (c) return c;
+    return fetch(req).then(r => {
+      if (!r || r.status !== 200 || r.type === 'opaque') return r;
+      const copy = r.clone();
+      caches.open(CACHE_NAME).then(k => k.put(req, copy));
+      return r;
+    }).catch(() => new Response('', { status: 504, statusText: 'offline' }));
+  }));
 });

@@ -1,0 +1,437 @@
+{
+ "schema": "ongal.pack/1",
+ "id": "zh-proto",
+ "title": "중국어 프로토 3문장",
+ "lang": "zh",
+ "audioMode": "single",
+ "speaker": {
+  "floor": 138.6,
+  "ceiling": 378.1,
+  "median": 214.9,
+  "note": "3개 파일 통합 추정(Hirst 2단계). 문장별로 따로 추정하면 중앙값이 -0.67~+1.45반음 흔들림.",
+  "p2": 144.9,
+  "p98": 323.6
+ },
+ "sentences": [
+  {
+   "id": "s01",
+   "audio": "audio/all.mp3",
+   "t0": 0.18,
+   "t1": 8.15,
+   "text": {
+    "hanzi": "他不仅长得帅，性格好，而且演技很好，所以我很喜欢他。",
+    "pinyin": "Tā bùjǐn zhǎng de shuài, xìnggé hǎo, érqiě yǎnjì hěn hǎo, suǒyǐ wǒ hěn xǐhuan tā.",
+    "pron": "타 뿌 진 짱 더 슈아이 싱 꺼 하오 얼 치에 옌 지 헌 하오 소 이 워 헌 시 환 타",
+    "trans": "그는 잘생기고 성격이 좋을 뿐만 아니라 연기도 아주 잘해서, 저는 그를 무척 좋아합니다."
+   },
+   "syllables": [
+    {
+     "hanzi": "他",
+     "pinyin": "tā",
+     "pron": "타",
+     "tone": 1
+    },
+    {
+     "hanzi": "不",
+     "pinyin": "bù",
+     "pron": "뿌",
+     "tone": 4
+    },
+    {
+     "hanzi": "仅",
+     "pinyin": "jǐn",
+     "pron": "진",
+     "tone": 3
+    },
+    {
+     "hanzi": "长",
+     "pinyin": "zhǎng",
+     "pron": "짱",
+     "tone": 3
+    },
+    {
+     "hanzi": "得",
+     "pinyin": "de",
+     "pron": "더",
+     "tone": 5
+    },
+    {
+     "hanzi": "帅",
+     "pinyin": "shuài",
+     "pron": "슈아이",
+     "tone": 4,
+     "punct": "，"
+    },
+    {
+     "hanzi": "性",
+     "pinyin": "xìng",
+     "pron": "싱",
+     "tone": 4
+    },
+    {
+     "hanzi": "格",
+     "pinyin": "gé",
+     "pron": "꺼",
+     "tone": 2
+    },
+    {
+     "hanzi": "好",
+     "pinyin": "hǎo",
+     "pron": "하오",
+     "tone": 3,
+     "punct": "，"
+    },
+    {
+     "hanzi": "而",
+     "pinyin": "ér",
+     "pron": "얼",
+     "tone": 2
+    },
+    {
+     "hanzi": "且",
+     "pinyin": "qiě",
+     "pron": "치에",
+     "tone": 3
+    },
+    {
+     "hanzi": "演",
+     "pinyin": "yǎn",
+     "pron": "옌",
+     "tone": 3
+    },
+    {
+     "hanzi": "技",
+     "pinyin": "jì",
+     "pron": "지",
+     "tone": 4
+    },
+    {
+     "hanzi": "很",
+     "pinyin": "hěn",
+     "pron": "헌",
+     "tone": 3,
+     "toneReal": 2
+    },
+    {
+     "hanzi": "好",
+     "pinyin": "hǎo",
+     "pron": "하오",
+     "tone": 3,
+     "punct": "，"
+    },
+    {
+     "hanzi": "所",
+     "pinyin": "suǒ",
+     "pron": "소",
+     "tone": 3,
+     "toneReal": 2
+    },
+    {
+     "hanzi": "以",
+     "pinyin": "yǐ",
+     "pron": "이",
+     "tone": 3
+    },
+    {
+     "hanzi": "我",
+     "pinyin": "wǒ",
+     "pron": "워",
+     "tone": 3,
+     "toneReal": 2
+    },
+    {
+     "hanzi": "很",
+     "pinyin": "hěn",
+     "pron": "헌",
+     "tone": 3,
+     "toneReal": 2
+    },
+    {
+     "hanzi": "喜",
+     "pinyin": "xǐ",
+     "pron": "시",
+     "tone": 3
+    },
+    {
+     "hanzi": "欢",
+     "pinyin": "huan",
+     "pron": "환",
+     "tone": 5
+    },
+    {
+     "hanzi": "他",
+     "pinyin": "tā",
+     "pron": "타",
+     "tone": 1,
+     "punct": "。"
+    }
+   ]
+  },
+  {
+   "id": "s02",
+   "audio": "audio/all.mp3",
+   "t0": 9.36,
+   "t1": 16.55,
+   "text": {
+    "hanzi": "我记得那家面包店旁边不是文具店，而是一家化妆品店。",
+    "pinyin": "Wǒ jìde nà jiā miànbāodiàn pángbiān búshì wénjùdiàn, érshì yìjiā huàzhuāngpǐndiàn.",
+    "pron": "워 지 더 나 지아 미엔 빠오 디엔 팡 비엔 부 스 웬 주 디엔 어 스 이 지아 화 주앙 핀 디엔",
+    "trans": "제가 기억하기로 그 빵집 옆은 문구점이 아니라 화장품 가게였어요."
+   },
+   "syllables": [
+    {
+     "hanzi": "我",
+     "pinyin": "wǒ",
+     "pron": "워",
+     "tone": 3
+    },
+    {
+     "hanzi": "记",
+     "pinyin": "jì",
+     "pron": "지",
+     "tone": 4
+    },
+    {
+     "hanzi": "得",
+     "pinyin": "de",
+     "pron": "더",
+     "tone": 5
+    },
+    {
+     "hanzi": "那",
+     "pinyin": "nà",
+     "pron": "나",
+     "tone": 4
+    },
+    {
+     "hanzi": "家",
+     "pinyin": "jiā",
+     "pron": "지아",
+     "tone": 1
+    },
+    {
+     "hanzi": "面",
+     "pinyin": "miàn",
+     "pron": "미엔",
+     "tone": 4
+    },
+    {
+     "hanzi": "包",
+     "pinyin": "bāo",
+     "pron": "빠오",
+     "tone": 1
+    },
+    {
+     "hanzi": "店",
+     "pinyin": "diàn",
+     "pron": "디엔",
+     "tone": 4
+    },
+    {
+     "hanzi": "旁",
+     "pinyin": "páng",
+     "pron": "팡",
+     "tone": 2
+    },
+    {
+     "hanzi": "边",
+     "pinyin": "biān",
+     "pron": "비엔",
+     "tone": 1
+    },
+    {
+     "hanzi": "不",
+     "pinyin": "bú",
+     "pron": "부",
+     "tone": 2
+    },
+    {
+     "hanzi": "是",
+     "pinyin": "shì",
+     "pron": "스",
+     "tone": 4
+    },
+    {
+     "hanzi": "文",
+     "pinyin": "wén",
+     "pron": "웬",
+     "tone": 2
+    },
+    {
+     "hanzi": "具",
+     "pinyin": "jù",
+     "pron": "주",
+     "tone": 4
+    },
+    {
+     "hanzi": "店",
+     "pinyin": "diàn",
+     "pron": "디엔",
+     "tone": 4,
+     "punct": "，"
+    },
+    {
+     "hanzi": "而",
+     "pinyin": "ér",
+     "pron": "어",
+     "tone": 2
+    },
+    {
+     "hanzi": "是",
+     "pinyin": "shì",
+     "pron": "스",
+     "tone": 4
+    },
+    {
+     "hanzi": "一",
+     "pinyin": "yì",
+     "pron": "이",
+     "tone": 4
+    },
+    {
+     "hanzi": "家",
+     "pinyin": "jiā",
+     "pron": "지아",
+     "tone": 1
+    },
+    {
+     "hanzi": "化",
+     "pinyin": "huà",
+     "pron": "화",
+     "tone": 4
+    },
+    {
+     "hanzi": "妆",
+     "pinyin": "zhuāng",
+     "pron": "주앙",
+     "tone": 1
+    },
+    {
+     "hanzi": "品",
+     "pinyin": "pǐn",
+     "pron": "핀",
+     "tone": 3
+    },
+    {
+     "hanzi": "店",
+     "pinyin": "diàn",
+     "pron": "디엔",
+     "tone": 4,
+     "punct": "。"
+    }
+   ]
+  },
+  {
+   "id": "s03",
+   "audio": "audio/all.mp3",
+   "t0": 17.4,
+   "t1": 22.57,
+   "text": {
+    "hanzi": "我虽然很忙，但是每天都坚持学习汉语。",
+    "pinyin": "Wǒ suīrán hěn máng, dànshì měitiān dōu jiānchí xuéxí Hànyǔ.",
+    "pron": "워 수이 란 헌 망 단 스 메이 티엔 도우 지안 츠 슈에 시 한 위",
+    "trans": "저는 비록 많이 바쁘지만, 매일 꾸준히 중국어를 공부하고 있습니다."
+   },
+   "syllables": [
+    {
+     "hanzi": "我",
+     "pinyin": "wǒ",
+     "pron": "워",
+     "tone": 3
+    },
+    {
+     "hanzi": "虽",
+     "pinyin": "suī",
+     "pron": "수이",
+     "tone": 1
+    },
+    {
+     "hanzi": "然",
+     "pinyin": "rán",
+     "pron": "란",
+     "tone": 2
+    },
+    {
+     "hanzi": "很",
+     "pinyin": "hěn",
+     "pron": "헌",
+     "tone": 3
+    },
+    {
+     "hanzi": "忙",
+     "pinyin": "máng",
+     "pron": "망",
+     "tone": 2,
+     "punct": "，"
+    },
+    {
+     "hanzi": "但",
+     "pinyin": "dàn",
+     "pron": "단",
+     "tone": 4
+    },
+    {
+     "hanzi": "是",
+     "pinyin": "shì",
+     "pron": "스",
+     "tone": 4
+    },
+    {
+     "hanzi": "每",
+     "pinyin": "měi",
+     "pron": "메이",
+     "tone": 3
+    },
+    {
+     "hanzi": "天",
+     "pinyin": "tiān",
+     "pron": "티엔",
+     "tone": 1
+    },
+    {
+     "hanzi": "都",
+     "pinyin": "dōu",
+     "pron": "도우",
+     "tone": 1
+    },
+    {
+     "hanzi": "坚",
+     "pinyin": "jiān",
+     "pron": "지안",
+     "tone": 1
+    },
+    {
+     "hanzi": "持",
+     "pinyin": "chí",
+     "pron": "츠",
+     "tone": 2
+    },
+    {
+     "hanzi": "学",
+     "pinyin": "xué",
+     "pron": "슈에",
+     "tone": 2
+    },
+    {
+     "hanzi": "习",
+     "pinyin": "xí",
+     "pron": "시",
+     "tone": 2
+    },
+    {
+     "hanzi": "汉",
+     "pinyin": "hàn",
+     "pron": "한",
+     "tone": 4
+    },
+    {
+     "hanzi": "语",
+     "pinyin": "yǔ",
+     "pron": "위",
+     "tone": 3,
+     "punct": "。"
+    }
+   ]
+  }
+ ]
+}
