@@ -2,7 +2,7 @@
    CORE: 없으면 앱이 안 열린다 → 하나라도 실패하면 설치를 실패시킨다
    EXTRA: 없어도 앱은 열린다 → 각각 따로 시도하고 실패해도 넘어간다
    (한 묶음 addAll이면 아이콘 하나 빠져도 오프라인이 통째로 죽는다) */
-const CACHE_NAME = 'ongal-20260824-0830';
+const CACHE_NAME = 'ongal-20260824-0940';
 
 const CORE = ['./', './index.html', './manifest.webmanifest'];
 
