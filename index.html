@@ -259,7 +259,7 @@
   #lflow::-webkit-scrollbar{display:none}
   table.lseg{border-collapse:collapse;flex:0 0 auto}
   table.lseg td{padding:calc(var(--lgap)/2) 3px;text-align:center;vertical-align:middle;white-space:nowrap}
-  table.lseg td.brk{padding-right:10px}
+  table.lseg td.pct{padding-left:0;padding-right:10px;text-align:left}   /* 구두점 전용 칸 */
   /* 다섯 줄 모두 같은 밝기 — 줄마다 톤이 다르면 눈이 밝은 줄로만 간다.
      끈 줄만 어둡다(tr.roff / .roff2 의 opacity). */
   table.lseg .py,table.lseg .kr,table.lseg .pc{color:var(--ink);font-style:normal}
@@ -296,6 +296,8 @@
   .lprev .sy{display:inline-block;margin-right:9px;vertical-align:middle}
   /* 설정 카드 미리보기도 메인과 같은 밝기 */
   .lprev,.lprev .kr,.lprev .py,.lprev .pc{color:var(--ink)}
+  /* 체크를 끄면 메인 화면과 같은 흐림으로 — 설정에서도 켬/끔이 눈에 보여야 한다 */
+  .lprev.roff{opacity:.13}
   .lprev b{color:var(--ink);font-weight:700}
   .ltog{flex:0 0 auto;font-size:11.5px;padding:5px 7px;border-radius:8px;
     border:1px solid var(--line);color:var(--dim);background:transparent;line-height:1}
@@ -2362,7 +2364,7 @@ window.addEventListener('drop', e=>{ if(e.dataTransfer.files.length) importFiles
 /* ===== 새 버전 알림 =====
    GitHub에 새 index.html 을 올리면, 앱이 알아채고 아래에 알림을 띄운다.
    누르면 캐시를 비우고 새로 받는다. 불러온 음원과 설정은 그대로 남는다. */
-const APP_VERSION = 'v1.1.1';
+const APP_VERSION = 'v1.1.3';
 const APP_DATE = '2026-08-25';
 let verChecked = 0;
 
@@ -2601,7 +2603,7 @@ window.addEventListener('pagehide', flushSaves);
     const cell = (k,y)=>
       k==='tone'   ? toneCell(y.tone, y.toneReal)
     : k==='pinyin' ? '<span class="py">'+esc(y.pinyin)+'</span>'
-    : k==='hanzi'  ? '<i class="pc">'+esc(y.pre||'')+'</i><b>'+esc(y.hanzi)+'</b><i class="pc">'+esc(y.punct||'')+'</i>'
+    : k==='hanzi'  ? '<i class="pc">'+esc(y.pre||'')+'</i><b>'+esc(y.hanzi)+'</b>'
     :                '<span class="kr">'+esc(y.pron)+'</span>';
 
     /* 구두점에서 끊어 호흡 덩어리로 */
@@ -2611,7 +2613,11 @@ window.addEventListener('pagehide', flushSaves);
 
     const segT = g => '<table class="lseg"><tbody>' + syOrder.map(k=>
         '<tr class="lr-'+k+(LN.show[k]?'':' roff')+'" style="height:'+RH[k]+'px;'+FSZ[k]+'">'
-        + g.map(y=>'<td class="'+(y.punct?'brk':'')+'">'+cell(k,y)+'</td>').join('')
+        /* 구두점은 글자와 같은 칸에 두지 않는다. 같은 칸에 넣으면 그 열만 두 배로 넓어지고,
+           병음·성조가 그 넓은 칸 가운데 놓여 제 한자에서 떨어져 보인다. 칸을 따로 준다. */
+        + g.map(y=> '<td>'+cell(k,y)+'</td>'
+              + (y.punct ? '<td class="pct">'+(k==='hanzi'?'<i class="pc">'+esc(y.punct)+'</i>':'')+'</td>' : '')
+          ).join('')
         + '</tr>').join('') + '</tbody></table>';
 
     const t = (ln.text && ln.text.trans) || '';
@@ -2730,7 +2736,7 @@ window.addEventListener('pagehide', flushSaves);
         + '<button class="ltog'+(LN.sandhi?' on':'')+'" data-tg="sandhi">변조</button>' : '';
       return '<div class="lcard" data-k="'+k+'" data-i="'+i+'">'
         + '<button class="cb2'+(LN.show[k]?' on':'')+'" data-lk="'+k+'"><span>✓</span></button>'
-        + '<div class="lprev">'+previewHTML(k, ln)+'</div>'
+        + '<div class="lprev'+(LN.show[k]?'':' roff')+'">'+previewHTML(k, ln)+'</div>'
         + extra
         + '<div class="lsz">'
         +   '<button data-sz="'+k+'" data-d="-1"'+(sz<=1?' disabled':'')+'>−</button>'
