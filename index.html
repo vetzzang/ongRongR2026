@@ -68,7 +68,7 @@
   .waves{padding:0 12px;}
   .wrap{position:relative;border-radius:10px;overflow:hidden;background:#05080d;}
   #wOver{height:52px;touch-action:none;cursor:grab} #wZoom{height:52px} #wRhy{height:78px}
-  .wrap+.wrap{margin-top:8px}
+  .wrap+.wrap{margin-top:4px}
   /* 자막 띠 — srt 가 붙은 파일에서만 나타난다. 없으면 아예 자리를 차지하지 않는다. */
   #wCap{display:none;align-items:center;padding:6px 12px}
   #wCap.on{display:flex}
@@ -79,8 +79,14 @@
   #capTx .cl{font-size:15px;line-height:1.35;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   #capTx.off{color:var(--dim2)}
   canvas{display:block;width:100%;height:100%}
-  .times{display:flex;justify-content:space-between;padding:5px 2px 0;font-size:11.5px;color:var(--dim)}
-  .times .cur{color:var(--green)}
+  .meta .cur{color:var(--green)}
+  /* 정보는 어떤 폭에서도 한 줄 — 모자라면 '문장 n초'가 먼저 줄어든다 */
+  .waves .meta{padding:6px 4px 0;flex-wrap:nowrap;white-space:nowrap}
+  .waves .meta #sLen{flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis}
+  @media (max-width:360px){ .waves .meta{gap:6px} }
+  /* 자막 띠의 위 간격은 .wrap+.wrap 에서 왔는데, 이제 앞 형제가 정보 줄(.meta)이라
+     그 규칙이 비껴간다 — 정보 줄 다음에 오는 파형/띠에 간격을 돌려준다. */
+  .waves .meta+.wrap{margin-top:4px}
 
   /* meta row */
   .meta{display:flex;align-items:center;gap:10px;padding:11px 14px 0;color:var(--dim);font-size:12.5px}
@@ -95,7 +101,7 @@
   .star.on svg{stroke:#e8c46a;fill:#e8c46a}
 
   /* stage */
-  #stage{flex:1 1 auto;position:relative;min-height:150px;margin:6px 0}
+  #stage{position:relative;margin:6px 0}  /* 높이 규칙은 아래 '유동 무대' 블록 한 곳에서만 */
   #next{position:absolute;width:112px;height:112px;border-radius:50%;background:var(--next);
     color:var(--nextInk);font-weight:700;letter-spacing:.14em;font-size:15px;
     display:grid;place-items:center;touch-action:none;
@@ -235,15 +241,18 @@
   @media (prefers-reduced-motion: reduce){*{animation-duration:.01ms !important;transition-duration:.01ms !important}}
 
   /* ═══ 대본 5줄 — 다섯 줄이 한 박스 안에, 체크박스는 각 줄 중앙에 맞춰 배치 ═══ */
-  #lines{flex:1 1 auto;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;
+  #lines{flex:0 1 auto;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;
     padding:4px 0;scrollbar-width:none}
   #lines::-webkit-scrollbar{display:none}
   #ltabWrap{padding:6px 12px 2px}
-  #lrow{display:flex;align-items:stretch;gap:10px}
-  #lcol{position:relative;flex:0 0 27px}
+  /* 체크박스 열과 대본이 한 박스 안에 함께 든다 — 테두리는 행(#lrow)이 두른다 */
+  /* 체크박스 좌우 여백을 같게: 박스 왼쪽 안여백 = 체크박스·글자 사이 간격 = 10px */
+  #lrow{display:flex;align-items:stretch;gap:10px;
+    background:var(--panel);border:1px solid var(--line);
+    border-radius:12px;padding:9px 11px 9px 10px}
+  #lcol{position:relative;flex:0 0 22px}
   #lcol .cb2{position:absolute;left:0;transform:translateY(-50%)}
-  #lbox{flex:1 1 auto;min-width:0;background:var(--panel);border:1px solid var(--line);
-    border-radius:12px;padding:9px 11px}
+  #lbox{flex:1 1 auto;min-width:0}
   #lbox{--lgap:7px}
   #lflow{display:flex;flex-wrap:wrap;align-items:flex-start;
     column-gap:22px;row-gap:calc(var(--lgap)*2);overflow-x:auto;scrollbar-width:none}
@@ -251,18 +260,20 @@
   table.lseg{border-collapse:collapse;flex:0 0 auto}
   table.lseg td{padding:calc(var(--lgap)/2) 3px;text-align:center;vertical-align:middle;white-space:nowrap}
   table.lseg td.brk{padding-right:10px}
-  table.lseg .py,table.lseg .kr,table.lseg .pc{color:var(--dim);font-style:normal}
+  /* 다섯 줄 모두 같은 밝기 — 줄마다 톤이 다르면 눈이 밝은 줄로만 간다.
+     끈 줄만 어둡다(tr.roff / .roff2 의 opacity). */
+  table.lseg .py,table.lseg .kr,table.lseg .pc{color:var(--ink);font-style:normal}
   table.lseg b{color:var(--ink)}
   tr.roff td{opacity:.13}
   #ltrans{margin-top:0;padding-top:0;border-top:0}
-  #ltrans .ttx{line-height:1.55;padding:calc(var(--lgap)/2) 3px}
+  #ltrans .ttx{line-height:1.55;padding:calc(var(--lgap)/2) 3px;color:var(--ink)}
   #ltrans .ttx.roff2{opacity:.13}
   /* flex:0 0 auto — 카드 안에서 옆 미리보기가 길면 네모가 눌려 직사각형이 된다.
      체크박스는 어떤 줄이든 같은 정사각형이어야 한다. */
-  .cb2{width:27px;height:27px;flex:0 0 auto;box-sizing:border-box;
-    border-radius:7px;border:1.6px solid var(--dim);
+  .cb2{width:22px;height:22px;flex:0 0 auto;box-sizing:border-box;
+    border-radius:6px;border:1.4px solid var(--dim);
     background:transparent;color:var(--dim);display:grid;place-items:center;
-    font-size:14px;line-height:1;cursor:pointer;padding:0}
+    font-size:11px;line-height:1;cursor:pointer;padding:0}
   .cb2:focus-visible{outline:2px solid var(--green);outline-offset:2px}
   .cb2 span{opacity:0}
   .cb2.on{border-color:var(--dim);color:var(--ink)}
@@ -283,7 +294,8 @@
     -webkit-mask-image:linear-gradient(90deg,#000 76%,transparent 100%);
     mask-image:linear-gradient(90deg,#000 76%,transparent 100%)}
   .lprev .sy{display:inline-block;margin-right:9px;vertical-align:middle}
-  .lprev .kr,.lprev .py{color:var(--dim)}
+  /* 설정 카드 미리보기도 메인과 같은 밝기 */
+  .lprev,.lprev .kr,.lprev .py,.lprev .pc{color:var(--ink)}
   .lprev b{color:var(--ink);font-weight:700}
   .ltog{flex:0 0 auto;font-size:11.5px;padding:5px 7px;border-radius:8px;
     border:1px solid var(--line);color:var(--dim);background:transparent;line-height:1}
@@ -294,6 +306,13 @@
   .lsz button:disabled{color:var(--dim2)}
   .lsz b{flex:0 0 auto;font-variant-numeric:tabular-nums;font-size:14px;min-width:30px;text-align:center;font-weight:600}
   .lsz b i{color:var(--dim);font-style:normal;font-size:12px}
+  /* 끌기 손잡이 — 여기만 touch-action:none. 터치에서 카드 본문은 pan-y 라
+     세로로 끌면 브라우저가 스크롤로 가져가며 드래그를 강제 취소(pointercancel)한다.
+     손잡이에서 시작한 손끝만은 브라우저가 손대지 못한다. */
+  .lgrip{flex:0 0 auto;touch-action:none;cursor:grab;color:var(--dim2);
+    font-size:17px;line-height:1;padding:10px 4px 10px 8px;user-select:none;
+    -webkit-user-select:none;-webkit-touch-callout:none}
+  .lcard.drag .lgrip{cursor:grabbing;color:var(--ink)}
   .lchint{color:var(--dim);font-size:12.5px;padding:6px 4px 10px}
   .lcfoot{display:flex;gap:8px;padding:0 0 4px}
   .lcfoot .seg{flex:1 1 0;justify-content:center;padding:11px 10px;font-size:13.5px;color:var(--ink)}
@@ -303,7 +322,9 @@
   .lcbanner.on{display:block}
   .hide{display:none !important}
   /* NEXT 영역은 고정, 남는 세로는 대본이 쓴다 (대본이 눌려 사라지지 않게) */
-  #stage{flex:0 0 auto;height:clamp(132px,17vh,190px);min-height:0}
+  /* NEXT 무대는 대본이 쓰고 남은 세로를 전부 가져간다.
+     대본이 길면 최소 높이까지 물러서고, 그 밑으로는 대본이 안에서 스크롤한다. */
+  #stage{flex:1 1 auto;height:auto;min-height:clamp(132px,17vh,190px)}
 
   /* 폰: 전부 한 화면에 들어가도록 압축한다 — 파형·여백·표·NEXT·휠을 줄여서.
      음성파일을 고르면 3단 파형 + 5줄 + NEXT + 휠이 스크롤 없이 다 보여야 한다. */
@@ -311,22 +332,20 @@
     .bar{padding:6px 10px 5px}
     .tb{width:44px;height:44px}
     .spd{height:44px}
-    #wOver{height:clamp(36px,4.2vh,52px)}
-    #wZoom{height:clamp(40px,5.8vh,64px)}
+    #wOver,#wZoom{height:clamp(36px,4.2vh,52px)}   /* 1·2단 동일(기준 1단) */
     #wRhy{height:clamp(52px,7.2vh,84px)}
     #wCap{padding:4px 8px}
     #capTx{min-height:calc(var(--capn,1) * 1.35 * 13.5px)}
     #capTx .cl{font-size:13.5px}
-    .times{font-size:11px}
     .meta{padding:7px 14px 0}
     #lines{padding:2px 0}
     table.lseg td{padding:calc(var(--lgap)/2) 2px}
-    #lbox{padding:7px 8px;--lgap:5px}
-    #lrow{gap:8px}
-    #lcol{flex:0 0 24px}
-    .cb2{width:24px;height:24px;font-size:12px}
+    #lbox{--lgap:5px}
+    #lrow{gap:8px;padding:7px 8px}
+    #lcol{flex:0 0 19px}
+    .cb2{width:19px;height:19px;font-size:10px}
     #lflow{column-gap:15px;row-gap:8px}
-    #stage{height:clamp(96px,13vh,140px)}
+    #stage{min-height:clamp(96px,13vh,140px)}
     #next{width:96px;height:96px;font-size:14px}
     #wheel{height:96px;
       -webkit-mask-image:linear-gradient(180deg,transparent 0,#000 30%,#000 70%,transparent 100%);
@@ -347,15 +366,18 @@
     .bar,.waves,.meta,#wheelWrap{max-width:820px;margin-left:auto;margin-right:auto;width:100%}
     #lines{max-width:1200px;margin-left:auto;margin-right:auto;width:100%}
     .sheet .shead,.sheet .sbody,.sheet .cta{max-width:680px;margin-left:auto;margin-right:auto;width:100%}
-    #wOver canvas,#cOver{height:68px}
+    /* 캔버스가 아니라 '상자' 높이를 키운다. 캔버스만 68px 로 키우면 52px 상자가
+       넘치는 아래 16px 을 잘라 파형이 위로 치우쳐 짤려 보인다. 캔버스는 항상 100%.
+       1·2단은 항상 같은 높이(기준은 1단), 3단만 따로. */
+    #wOver,#wZoom{height:68px}
     .tb{width:52px;height:52px}
     #lines{padding:6px 8px}
-    #stage{height:clamp(150px,16vh,210px)}
+    #stage{min-height:clamp(150px,16vh,210px)}
   }
   /* 가로로 눕히면 세로가 부족하다. 파형과 NEXT를 조금 낮춰 대본 자리를 만든다. */
   @media (orientation:landscape) and (max-height:900px){
     #wOver{height:44px} #wZoom{height:44px} #wRhy{height:66px}
-    #stage{height:124px}
+    #stage{min-height:124px}
   }
 
 </style>
@@ -381,19 +403,21 @@
     <button class="tb" id="bSet" aria-label="설정"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-1.8-.3 1.6 1.6 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1A1.6 1.6 0 0 0 9 19.4a1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0 .3-1.8 1.6 1.6 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1A1.6 1.6 0 0 0 4.6 9a1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 1.8.3H9a1.6 1.6 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 1 1.5 1.6 1.6 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8V9a1.6 1.6 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1z"/></svg></button>
   </div>
 
+  <!-- 파형 3줄을 먼저, 바로 밑에 정보 한 줄: 문장 카운터 · 현재 시간 · 총 시간 -->
   <div class="waves">
     <div class="wrap" id="wOver"><canvas id="cOver"></canvas></div>
-    <div class="times mono"><span id="tStart">00:00:00</span><span class="cur" id="tCur">00:00:00</span><span id="tEnd">00:00:00</span></div>
-    <div class="wrap" id="wZoom" style="margin-top:6px"><canvas id="cZoom"></canvas></div>
+    <div class="wrap" id="wZoom"><canvas id="cZoom"></canvas></div>
     <div class="wrap" id="wRhy"><canvas id="cRhy"></canvas></div>
+    <div class="meta">
+      <button class="idx mono" id="sIdx" aria-label="처음 문장으로">— / —</button>
+      <span id="sLen" class="mono"></span>
+      <span id="tStart" hidden>00:00:00</span>
+      <span class="grow"></span>
+      <span class="cur mono" id="tCur">00:00:00</span>
+      <span class="mono" id="tEnd">00:00:00</span>
+      <button class="star" id="bStar" aria-label="이 문장 즐겨찾기"><svg viewBox="0 0 24 24"><path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8L3.5 9.7l5.9-.9z"/></svg></button>
+    </div>
     <div class="wrap" id="wCap"><div id="capTx"></div></div>
-  </div>
-
-  <div class="meta">
-    <button class="idx mono" id="sIdx" aria-label="처음 문장으로">— / —</button>
-    <span id="sLen" class="mono"></span>
-    <span class="grow"></span>
-    <button class="star" id="bStar" aria-label="이 문장 즐겨찾기"><svg viewBox="0 0 24 24"><path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8L3.5 9.7l5.9-.9z"/></svg></button>
   </div>
 
   <div id="lines">
@@ -470,7 +494,7 @@
 
     <div class="grp">대본 5줄</div>
     <div id="lcards"></div>
-    <div class="lchint">길게 눌러 순서 변경 — 메인 화면의 줄 순서도 같이 바뀝니다</div>
+    <div class="lchint">⠿ 를 끌어 순서 변경 — 메인 화면의 줄 순서도 같이 바뀝니다</div>
     <div class="lcfoot">
       <button class="seg" id="bLdefault">↺ 기본값으로</button>
       <button class="seg" id="bPack">기본 대본 불러오기</button>
@@ -2338,7 +2362,8 @@ window.addEventListener('drop', e=>{ if(e.dataTransfer.files.length) importFiles
 /* ===== 새 버전 알림 =====
    GitHub에 새 index.html 을 올리면, 앱이 알아채고 아래에 알림을 띄운다.
    누르면 캐시를 비우고 새로 받는다. 불러온 음원과 설정은 그대로 남는다. */
-const APP_VERSION = '20260824-1100';
+const APP_VERSION = 'v1.1.1';
+const APP_DATE = '2026-08-25';
 let verChecked = 0;
 
 async function checkUpdate(){
@@ -2479,7 +2504,7 @@ window.addEventListener('pagehide', flushSaves);
      성조는 최대 2단계, 한자는 4단계 — 줄마다 상한이 다르다. */
   const BASE = { pinyin:13, hanzi:20, pron:12, trans:16 };
   const STEP = [1, 1.3, 1.65, 2.05];
-  const TDIM = [{w:18,h:18,s:1.4},{w:24,h:23,s:1.8}];
+  const TDIM = [{w:8,h:8,s:0.6},{w:10,h:10,s:0.77}];   /* 절반에서 15% 더 축소 */
   const TCOL = {1:'#5B9CF6',2:'#3DC9A0',3:'#E8643A',4:'#E870A8',5:'#888888'};
   const GCOL = {5:'#5B9CF6',4:'#3DC9A0',3:'#E8643A',2:'#E870A8',1:'#888888'};
   const lv   = k => Math.min(MAXSZ[k], Math.max(1, LN.size[k]|0));
@@ -2496,7 +2521,7 @@ window.addEventListener('pagehide', flushSaves);
     const d = tdim();
     const pad = d.s*1.4, top = pad, ch = d.h - pad*2;
     const Y = p => top + (5-p)/4*ch;
-    const W = d.w, s = d.s, INK = '#dde4f0';
+    const W = d.w, s = d.s, INK = '#e8edf5';   /* 글자와 같은 밝기(--ink) */
     const wedge = (x0,y0,w0,x1,y1,w1)=>{
       const dx=x1-x0, dy=y1-y0, L=Math.hypot(dx,dy)||1;
       const nx=-dy/L*.5, ny=dx/L*.5;
@@ -2559,7 +2584,7 @@ window.addEventListener('pagehide', flushSaves);
   function renderLines(){
     const app = document.getElementById('app');
     const ln  = currentLine();
-    const has = !!(ln && ln.syllables && ln.syllables.length);
+    const has = !!(ln && ((ln.syllables && ln.syllables.length) || (ln.text && ln.text.trans)));
     app.classList.toggle('nolines', !has);
     document.getElementById('noLines').classList.toggle('hide', has);
     const wrap = document.getElementById('ltabWrap');
@@ -2576,7 +2601,7 @@ window.addEventListener('pagehide', flushSaves);
     const cell = (k,y)=>
       k==='tone'   ? toneCell(y.tone, y.toneReal)
     : k==='pinyin' ? '<span class="py">'+esc(y.pinyin)+'</span>'
-    : k==='hanzi'  ? '<b>'+esc(y.hanzi)+'</b><i class="pc">'+esc(y.punct||'')+'</i>'
+    : k==='hanzi'  ? '<i class="pc">'+esc(y.pre||'')+'</i><b>'+esc(y.hanzi)+'</b><i class="pc">'+esc(y.punct||'')+'</i>'
     :                '<span class="kr">'+esc(y.pron)+'</span>';
 
     /* 구두점에서 끊어 호흡 덩어리로 */
@@ -2711,7 +2736,8 @@ window.addEventListener('pagehide', flushSaves);
         +   '<button data-sz="'+k+'" data-d="-1"'+(sz<=1?' disabled':'')+'>−</button>'
         +   '<b>'+sz+'<i>/'+mx+'</i></b>'
         +   '<button data-sz="'+k+'" data-d="1"'+(sz>=mx?' disabled':'')+'>+</button>'
-        + '</div></div>';
+        + '</div>'
+        + '<span class="lgrip" aria-label="끌어서 순서 변경">⠿</span></div>';
     }).join('');
   }
 
@@ -2765,28 +2791,41 @@ window.addEventListener('pagehide', flushSaves);
       const el = document.getElementById(id);
       if(el) el.addEventListener('contextmenu', noMenu);
     }
+    let viaGrip=false, pid=null;
+    function activate(){
+      if(active || !card) return;
+      active=true; timer=null;
+      if(navigator.vibrate && S.haptic) navigator.vibrate(40);
+      /* 카드 높이는 줄 크기에 따라 제각각이다 — 거리 나눗셈 대신
+         드래그 중인 카드의 중심이 어느 카드들을 지났는지로 목표 자리를 정한다. */
+      const list=[...box.querySelectorAll('.lcard')];
+      centers = list.map(el=>{ const r=el.getBoundingClientRect(); return r.top + r.height/2; });
+      H = card.getBoundingClientRect().height + 8;
+      card.classList.add('drag');
+      try{ if(pid!=null) card.setPointerCapture(pid); }catch(err){}
+      banner.classList.add('on');
+      if(scroll) scroll.style.overflowY='hidden';
+      others=list.filter(el=>el!==card).map(el=>({el, idx:list.indexOf(el)}));
+    }
     box.addEventListener('pointerdown', e=>{
       const c = e.target.closest('.lcard');
       if(!c || e.target.closest('button')) return;
-      card=c; startY=e.clientY;
+      card=c; startY=e.clientY; pid=e.pointerId;
+      viaGrip = !!e.target.closest('.lgrip');
       const list=[...box.querySelectorAll('.lcard')];
       from=list.indexOf(c); hover=from;
-      timer=setTimeout(()=>{
-        active=true;
-        if(navigator.vibrate && S.haptic) navigator.vibrate(40);
-        /* 카드 높이는 줄 크기에 따라 제각각이다 — 거리 나눗셈 대신
-           드래그 중인 카드의 중심이 어느 카드들을 지났는지로 목표 자리를 정한다. */
-        centers = list.map(el=>{ const r=el.getBoundingClientRect(); return r.top + r.height/2; });
-        H = c.getBoundingClientRect().height + 8;
-        card.classList.add('drag');
-        try{ card.setPointerCapture(e.pointerId); }catch(err){}
-        banner.classList.add('on');
-        if(scroll) scroll.style.overflowY='hidden';
-        others=list.filter(el=>el!==card).map(el=>({el, idx:list.indexOf(el)}));
-      }, 700);
+      /* 손잡이는 바로(짧게), 그 밖은 길게 눌러야 잡힌다.
+         손잡이 쪽은 touch-action:none 이라 브라우저 스크롤과 다투지 않는다. */
+      timer=setTimeout(activate, viaGrip ? 60 : 700);
     });
     box.addEventListener('pointermove', e=>{
-      if(!active){ if(timer && Math.abs(e.clientY-startY)>8){ clearTimeout(timer); timer=null; } return; }
+      if(!active){
+        if(timer && Math.abs(e.clientY-startY)>8){
+          clearTimeout(timer); timer=null;
+          if(viaGrip) activate();          // 손잡이를 잡고 바로 끌기 시작한 경우
+        }
+        if(!active) return;
+      }
       e.preventDefault();
       const dy = e.clientY - startY;
       card.style.transform = 'translateY('+dy+'px)';
@@ -2962,16 +3001,162 @@ window.addEventListener('pagehide', flushSaves);
     return out;
   }
 
-  /* 자막 구간 → 문장 경계. 겹치면 뒤로 밀고, 파일 길이를 넘지 않게 자른다. */
-  function sentFromCues(cues, dur){
+  /* 자막 구간 → 문장 경계. 겹치면 뒤로 밀고, 파일 길이를 넘지 않게 자른다.
+     대본도 같은 목록에서 만들어야 문장 번호와 대본이 어긋나지 않는다. */
+  function cueSpans(cues, dur){
     const lim = dur > 0 ? dur : Infinity, out = [];
     for(const c of cues){
       let a = Math.max(0, c.s), b = Math.min(lim, c.e);
       if(out.length && a < out[out.length - 1].e) a = out[out.length - 1].e;
       if(b - a < 0.15) continue;
-      out.push({ s: a, e: b });
+      out.push({ s: a, e: b, cue: c });
     }
-    return out.length ? out : null;
+    return out;
+  }
+  function sentFromCues(cues, dur){
+    const sp = cueSpans(cues, dur);
+    return sp.length ? sp.map(x => ({ s: x.s, e: x.e })) : null;
+  }
+
+  /* ── 자막을 대본 5줄 상자에 그대로 태우기 ─────────────────────────────
+     srt 한 덩어리 = 문장 하나. 병음 줄과 한자 줄이 음절 수까지 맞으면
+     팩과 똑같은 syllables 구조로 만들어, 성조·병음·한자가 세로로 정렬된다.
+     맞지 않거나 한자가 없으면 억지로 붙이지 않고 있는 것만 보여준다. */
+  const PY_TONE = (() => {
+    const m = {}, sets = [['a','āáǎà'],['o','ōóǒò'],['e','ēéěè'],
+                          ['i','īíǐì'],['u','ūúǔù'],['v','ǖǘǚǜ']];
+    for(const [base, marks] of sets)
+      [...marks].forEach((ch,i)=>{ m[ch]=[base,i+1]; m[ch.toUpperCase()]=[base.toUpperCase(),i+1]; });
+    m['ü']=['v',0]; m['Ü']=['V',0];
+    return m;
+  })();
+  const PY_SYL = (() => {
+    const I = ['zh','ch','sh','b','p','m','f','d','t','n','l','g','k','h','j','q','x','r','z','c','s','y','w',''];
+    const F = ['iang','iong','uang','ueng','ian','iao','uai','uan','ing','iou','uei','uen','van',
+               'ang','eng','ong','ai','ei','ao','ou','an','en','er','ia','ie','iu','in','ua','uo',
+               'ui','un','ue','ve','vn','io','a','o','e','i','u','v'];
+    const t = new Set();
+    for(const i of I) for(const f of F) t.add(i + f);
+    ['n','ng','m','hm','hng','r'].forEach(x => t.add(x));      /* r = 儿화 */
+    return t;
+  })();
+  function splitPinyin(line){
+    const out = [];
+    /* 아포스트로피는 음절 경계다 (Xī'ān) */
+    for(const w of String(line||'').split(/\s+/).flatMap(x => x.split(/['\u2019]/))){
+      if(!w) continue;
+      const disp=[], base=[], tones=[];
+      for(const ch of w){
+        const t = PY_TONE[ch], b = t ? t[0] : ch;
+        if(/[a-zA-Z]/.test(b)){ disp.push(ch); base.push(b.toLowerCase()); tones.push(t?t[1]:0); }
+      }
+      if(!base.length) continue;
+      const str = base.join(''); const cut=[]; let i=0, ok=true;
+      while(i < str.length){
+        let hit=null;
+        for(let L=Math.min(6, str.length-i); L>=1; L--){
+          const c = str.slice(i, i+L);
+          if(!PY_SYL.has(c)) continue;
+          /* 단독 n/m/ng 가 뒤 음절의 첫소리를 뺏지 않게 */
+          if(L<=2 && /^(n|m|ng)$/.test(c) && i+L < str.length && /[aeiouv]/.test(str[i+L])) continue;
+          hit=c; break;
+        }
+        if(!hit){ ok=false; break; }
+        cut.push(hit); i += hit.length;
+      }
+      if(!ok){ out.push({ py:w, tone:0, bad:true }); continue; }
+      let p=0;
+      for(const c of cut){
+        let t=0;
+        for(let k=p;k<p+c.length;k++) if(tones[k]) t=tones[k];
+        out.push({ py: disp.slice(p, p+c.length).join(''), tone: t||5 });
+        p += c.length;
+      }
+    }
+    return out;
+  }
+  /* 음절 수가 한자 수와 안 맞으면 儿화(끝의 r)를 떼어 한 번 더 맞춰 본다.
+     딱 맞아떨어질 때만 채택 — 어긋난 채 붙이면 정렬이 통째로 밀린다. */
+  function alignPinyin(list, n){
+    if(!n || list.length === n) return list;
+    const alt=[];
+    for(const y of list){
+      const m = /^(.+)r$/i.exec(y.py||'');
+      if(m) { alt.push({ py:m[1], tone:y.tone }); alt.push({ py:'r', tone:5 }); }
+      else alt.push(y);
+    }
+    return alt.length === n ? alt : list;
+  }
+  const isHan = ch => ch >= '\u4e00' && ch <= '\u9fff';
+  function lineKind(t){
+    if(/[\u3040-\u30ff]/.test(t)) return 'other';        /* 일본어 가나 — 쪼개지 않는다 */
+    let han=0, kor=0, lat=0;
+    for(const ch of t){
+      if(isHan(ch)) han++;
+      else if(ch >= '\uac00' && ch <= '\ud7a3') kor++;
+      else if(/[a-zA-Z]/.test(ch) || PY_TONE[ch]) lat++;
+    }
+    if(han && han>=kor && han>=lat) return 'hanzi';
+    if(lat && lat>=han && lat>=kor) return 'latin';
+    if(kor) return 'kor';
+    return 'other';
+  }
+  function lineFromCue(cue){
+    const rows = capLines(cue);
+    if(!rows.length) return null;
+    let hz=null, py=null; const rest=[];
+    for(const t of rows){
+      const k = lineKind(t);
+      if(k==='hanzi' && !hz) hz=t;
+      else if(k==='latin' && !py) py=t;
+      else rest.push({ t, k });
+    }
+    const text = { hanzi:hz||'', pinyin:py||'', pron:'', trans:'' };
+    const syl = [];
+    if(hz){
+      let pre = '';                              /* 첫 한자 앞에 오는 여는 구두점 */
+      for(const ch of hz){
+        if(isHan(ch)){ syl.push({ hanzi:ch, pinyin:'', pron:'', tone:0 }); 
+          if(pre){ syl[syl.length-1].pre = pre; pre=''; } }
+        else if(ch.trim()){
+          if(syl.length) syl[syl.length-1].punct = (syl[syl.length-1].punct||'') + ch;
+          else pre += ch;
+        }
+      }
+      /* 병음은 한자와 음절 수가 맞을 때만 태운다 */
+      if(py){
+        const ps = alignPinyin(splitPinyin(py), syl.length);
+        if(ps.length === syl.length && !ps.some(x=>x.bad))
+          ps.forEach((x,i)=>{ syl[i].pinyin = x.py; syl[i].tone = x.tone; });
+        else rest.unshift({ t:py, k:'latin' });   /* 못 맞추면 글자 줄로 내려보낸다 */
+      }
+    } else if(py) rest.unshift({ t:py, k:'latin' });
+
+    /* 남은 줄 배치 — 독음이 될 수 있는 건 한글 줄뿐이다.
+       한글 줄이 둘이면 앞이 독음·뒤가 뜻(대본의 관례 순서).
+       하나뿐이면 보통 번역이다. 어절 수가 음절 수와 우연히 같을 수 있어
+       (3음절 문장의 세 어절 번역처럼), 충분히 긴 문장일 때만 독음으로 본다. */
+    const korAt = rest.map((x,i)=> x.k==='kor' ? i : -1).filter(i=>i>=0);
+    let pronAt = -1;
+    if(syl.length && korAt.length){
+      const cand = korAt[0], toks = rest[cand].t.split(/\s+/).filter(Boolean);
+      const enough = korAt.length >= 2 || syl.length >= 6;
+      if(enough && toks.length === syl.length){
+        pronAt = cand; text.pron = rest[cand].t;
+        toks.forEach((w,i)=>{ syl[i].pron = w; });
+      }
+    }
+    text.trans = rest.filter((x,i)=> i !== pronAt).map(x=>x.t).join(' ').trim();
+    if(!syl.length && !text.trans) text.trans = rows.join(' ');
+    return { text, syllables: syl };
+  }
+  function applyCues(f){
+    if(!f || !f.srt || !f.srt.cues) return false;
+    const sp = cueSpans(f.srt.cues, f.dur);
+    if(!sp.length) return false;
+    f.sent  = sp.map(x => ({ s:x.s, e:x.e }));
+    f.lines = sp.map(x => lineFromCue(x.cue));   /* 문장 번호와 1:1 */
+    return true;
   }
 
   const baseName = n => String(n || '').replace(/\.[^.]+$/, '').trim().toLowerCase();
@@ -2980,17 +3165,18 @@ window.addEventListener('pagehide', flushSaves);
   const subScore = (aud, sub) => sub === aud ? 2 : (sub.startsWith(aud + '.') ? 1 : 0);
 
   function applySub(f, p){
-    const sent = sentFromCues(p.cues, f.dur);
-    if(!sent) return false;
-    if(!f.sentAuto) f.sentAuto = f.sent;      // 끄면 돌아갈 자리를 남겨 둔다
+    if(!sentFromCues(p.cues, f.dur)) return false;
+    const keepAuto = f.sentAuto || f.sent;    // 끄면 돌아갈 자리를 남겨 둔다
     f.srt = { name: p.name, cues: p.cues };
-    f.sent = sent; f.last = 0; f.skip = {};   // 문장 번호가 바뀐다
+    if(!applyCues(f)){ f.srt = null; return false; }
+    f.sentAuto = keepAuto;
+    f.last = 0; f.skip = {};                  // 문장 번호가 바뀐다
     DB.putFile(f);
     return true;
   }
   function dropSub(f){
     if(!f || !f.srt) return;
-    f.srt = null;
+    f.srt = null; f.lines = null;
     if(f.sentAuto){ f.sent = f.sentAuto; f.sentAuto = null; }
     f.last = 0; f.skip = {};
     DB.putFile(f);
@@ -3141,7 +3327,9 @@ window.addEventListener('pagehide', flushSaves);
   const capLines = c => Array.isArray(c.t) ? c.t : (c.t ? [String(c.t)] : []);
   function capSet(f){
     const band = document.getElementById('wCap'), tx = document.getElementById('capTx');
-    CAP.cues = (f && f.srt && f.srt.cues && f.srt.cues.length) ? f.srt.cues : null;
+    /* 자막을 대본 상자가 보여주고 있으면 띠는 중복이다 */
+    const inBox = !!(f && f.lines && f.lines.length);
+    CAP.cues = (!inBox && f && f.srt && f.srt.cues && f.srt.cues.length) ? f.srt.cues : null;
     CAP.k = -2; CAP.on = null;
     band.classList.toggle('on', !!CAP.cues);
     tx.innerHTML = '';
@@ -3183,10 +3371,7 @@ window.addEventListener('pagehide', flushSaves);
     try{
       const f = S.files[i];
       /* 복원 시 ALGO_VER 마이그레이션이나 '다시 분석'이 경계를 덮었을 수 있다 */
-      if(f && f.srt && f.srt.cues){
-        const sc = sentFromCues(f.srt.cues, f.dur);
-        if(sc) f.sent = sc;
-      }
+      if(f && f.srt && f.srt.cues) applyCues(f);
     }catch(e){ console.warn('자막 경계 복원 실패:', e); }
     const r = _loadS.apply(this, arguments);
     try{ capSet(S.files[i]); }catch(e){ console.warn('자막 띠 갱신 실패:', e); }
@@ -3249,7 +3434,7 @@ window.addEventListener('pagehide', flushSaves);
      오프라인 앱은 새 버전을 조용히 백그라운드로 받는다. 사용자는 지금 몇 판을
      쓰는지, 새 판이 왔는지 알 길이 없다. 그래서 버전을 보여주고, 버튼 한 번으로
      확인→받기→갈아타기까지 끝낸다. */
-  document.getElementById('verTxt').textContent = APP_VERSION;
+  document.getElementById('verTxt').textContent = APP_VERSION + ' (' + APP_DATE + ')';
   /* reg.update() 는 "새 판이 있는지" 확인이 끝나면 답을 준다. 시간 짐작으로
      "이미 최신"이라 말하면 안 된다 — 회선이 느린 날 새 판을 받는 중인데
      최신이라 말해 놓고 갈아타기를 막는 수가 있다. 확인 결과로만 말한다. */
