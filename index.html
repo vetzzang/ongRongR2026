@@ -52,6 +52,8 @@
   .tb svg{width:30px;height:30px;stroke:var(--ink);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;}
   /* 아이콘마다 실제로 차지하는 면적이 달라서, 눈에 같은 크기로 보이도록 개별 보정 */
   .tb svg text{fill:var(--ink);stroke:none;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+  #bSplit.on svg{stroke:var(--green)}
+  td.wsp{width:13px;min-width:13px;padding:0}
   #bFolder svg{transform:scale(1.02)}
   #bSet    svg{transform:scale(.92)}
   #fBack svg,#sBack svg{transform:scale(1.02)}
@@ -268,6 +270,8 @@
   #ltrans{margin-top:0;padding-top:0;border-top:0}
   #ltrans .ttx{line-height:1.55;padding:calc(var(--lgap)/2) 3px;color:var(--ink)}
   #ltrans .ttx.roff2{opacity:.13}
+  table.lseg .ttx{color:var(--ink);line-height:1.55}
+  table.lseg .ttx.roff2{opacity:.13}
   /* flex:0 0 auto — 카드 안에서 옆 미리보기가 길면 네모가 눌려 직사각형이 된다.
      체크박스는 어떤 줄이든 같은 정사각형이어야 한다. */
   .cb2{width:22px;height:22px;flex:0 0 auto;box-sizing:border-box;
@@ -396,6 +400,7 @@
   <div class="bar">
     <button class="tb" id="bFolder" aria-label="파일"><svg viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></button>
     <button class="tb" id="bRepeat" aria-label="반복 모드"><svg viewBox="0 0 24 24" id="repIcon"><path d="M7.5 7.5a4.5 4.5 0 1 0 0 9c4.5 0 4.5-9 9-9a4.5 4.5 0 1 1 0 9c-4.5 0-4.5-9-9-9z"/></svg></button>
+    <button class="tb" id="bSplit" aria-label="단어 띄어 보기"><svg viewBox="0 0 24 24" id="splitIcon"><path d="M4.8 20.6 L12.6 9.4"/><path d="M9.6 8.6 L14.1 4.1 l1.9 1.9 c1.5 1.5 3.4 2.1 5.3 1.8 0 3.1 -1.5 6 -4.1 7.7 -0.4 -1.9 -1.4 -3.5 -2.8 -4.9 z"/></svg></button>
     <button class="tb" id="bPlay" aria-label="재생"><svg viewBox="0 0 24 24" id="playIcon"><path d="M7 4.5l12 7.5-12 7.5z"/></svg></button>
     <div class="spd">
       <button id="bSlow" aria-label="느리게"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button>
@@ -2364,8 +2369,8 @@ window.addEventListener('drop', e=>{ if(e.dataTransfer.files.length) importFiles
 /* ===== 새 버전 알림 =====
    GitHub에 새 index.html 을 올리면, 앱이 알아채고 아래에 알림을 띄운다.
    누르면 캐시를 비우고 새로 받는다. 불러온 음원과 설정은 그대로 남는다. */
-const APP_VERSION = 'v1.1.3';
-const APP_DATE = '2026-08-25';
+const APP_VERSION = 'v1.2.0';
+const APP_DATE = '2026-08-28';
 let verChecked = 0;
 
 async function checkUpdate(){
@@ -2583,6 +2588,25 @@ window.addEventListener('pagehide', flushSaves);
   const esc = t => String(t==null?'':t).replace(/[&<>]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
 
   /* ---------- 렌더 — 다섯 줄이 한 박스, 순서·크기는 줄마다 따로 ---------- */
+  /* 단어 띄어 보기(도끼 토글): 켜면 ws 경계마다 스페이서 칸을 5줄 전체에 넣고,
+     병음·독음은 단어 단위로 합쳐 그 단어의 첫 한자 왼쪽에 맞춰 시작한다. */
+  let WSPLIT = 0;
+  try{ WSPLIT = +localStorage.getItem('ongal_wsplit') || 0; }catch(e){}
+  (function(){
+    const b = document.getElementById('bSplit'); if(!b) return;
+    b.classList.toggle('on', !!WSPLIT);
+    b.onclick = ()=>{
+      WSPLIT = WSPLIT ? 0 : 1;
+      try{ localStorage.setItem('ongal_wsplit', WSPLIT); }catch(e){}
+      b.classList.toggle('on', !!WSPLIT);
+      const ln = currentLine();
+      if(WSPLIT && ln && ln.syllables && ln.syllables.length && !ln.syllables.some(y=>y.ws))
+        toast('이 문장에는 단어 정보가 없습니다');
+      renderLines();
+      try{ buzz(10); }catch(e){}
+    };
+  })();
+
   function renderLines(){
     const app = document.getElementById('app');
     const ln  = currentLine();
@@ -2594,7 +2618,7 @@ window.addEventListener('pagehide', flushSaves);
     if(!has){ wrap.innerHTML=''; return; }
 
     const syOrder = LN.order.filter(k=>k!=='trans');
-    const transTop = LN.order.indexOf('trans') === 0;   /* 뜻이 맨 위면 위로, 아니면 아래로 */
+    const transTop = LN.order.indexOf('trans') === 0;
     const RH={}, FSZ={};
     for(const k of syOrder){
       RH[k]  = k==='tone' ? tdim().h : Math.round(fsOf(k)*1.5);
@@ -2606,40 +2630,98 @@ window.addEventListener('pagehide', flushSaves);
     : k==='hanzi'  ? '<i class="pc">'+esc(y.pre||'')+'</i><b>'+esc(y.hanzi)+'</b>'
     :                '<span class="kr">'+esc(y.pron)+'</span>';
 
+    const sy = ln.syllables || [];          /* 뜻만 있는 대본 방어 */
+    const hasWS = sy.some(y=>y.ws);
+    const sp = WSPLIT && hasWS;
+    /* 스페이서: 단어 시작 앞. 표 첫 칸과 구두점 칸 직후는 이미 여백이 있어 생략 */
+    const needSp = (g,j)=> sp && j>0 && g[j].ws && !g[j-1].punct;
+
     /* 구두점에서 끊어 호흡 덩어리로 */
     const segs=[]; let cur=[];
-    for(const y of ln.syllables){ cur.push(y); if(y.punct){ segs.push(cur); cur=[]; } }
+    for(const y of sy){ cur.push(y); if(y.punct){ segs.push(cur); cur=[]; } }
     if(cur.length) segs.push(cur);
 
-    const segT = g => '<table class="lseg"><tbody>' + syOrder.map(k=>
-        '<tr class="lr-'+k+(LN.show[k]?'':' roff')+'" style="height:'+RH[k]+'px;'+FSZ[k]+'">'
-        /* 구두점은 글자와 같은 칸에 두지 않는다. 같은 칸에 넣으면 그 열만 두 배로 넓어지고,
-           병음·성조가 그 넓은 칸 가운데 놓여 제 한자에서 떨어져 보인다. 칸을 따로 준다. */
-        + g.map(y=> '<td>'+cell(k,y)+'</td>'
-              + (y.punct ? '<td class="pct">'+(k==='hanzi'?'<i class="pc">'+esc(y.punct)+'</i>':'')+'</td>' : '')
-          ).join('')
-        + '</tr>').join('') + '</tbody></table>';
+    /* 한 행의 칸들 — 띄어 보기 ON 이면 병음·독음은 단어 단위 병합(colspan),
+       뜻 줄처럼 width:0 트릭으로 열 폭을 밀지 않고 첫 한자 왼쪽에서 시작한다 */
+    const rowTds = (k,g,first)=>{
+      if(sp && (k==='pinyin'||k==='pron')){
+        const words=[]; let w=null;
+        g.forEach((y,j)=>{ if(!w || y.ws){ w={j0:j, ys:[]}; words.push(w); } w.ys.push(y); });
+        return words.map(w=>{
+          const span = w.ys.reduce((a,y)=>a+1+(y.punct?1:0),0);
+          let txt = w.ys.map(y=> k==='pinyin'? (y.pinyin||'') : (y.pron||'')).join('');
+          const last = w.ys[w.ys.length-1];
+          if(last.punct) txt += (last.punct==='，'?',': last.punct==='。'?'': last.punct);
+          if(k==='pinyin' && first && w.j0===0 && txt)
+            txt = txt.charAt(0).toUpperCase()+txt.slice(1);   /* 문장 첫 단어만 Yóuyú 식 */
+          return (needSp(g,w.j0)?'<td class="wsp"></td>':'')
+            + '<td colspan="'+span+'" style="text-align:left">'
+            + '<div style="width:0;white-space:nowrap;overflow:visible;padding-left:3px">'
+            + '<span class="'+(k==='pinyin'?'py':'kr')+'">'+esc(txt)+'</span></div></td>';
+        }).join('');
+      }
+      return g.map((y,j)=> (needSp(g,j)?'<td class="wsp"></td>':'')
+          + '<td>'+cell(k,y)+'</td>'
+          + (y.punct ? '<td class="pct">'+(k==='hanzi'?'<i class="pc">'+esc(y.punct)+'</i>':'')+'</td>' : '')
+        ).join('');
+    };
+    const spanOf = g => g.reduce((a,y,j)=>a+1+(y.punct?1:0)+(needSp(g,j)?1:0),0);
 
+    /* 뜻: 쉼표 조각 수가 호흡 덩어리 수와 맞으면 각 조각을 해당 구간
+       첫 한자 밑에 정렬한다. 안 맞으면 기존 통짜 줄로 안전하게 물러선다. */
     const t = (ln.text && ln.text.trans) || '';
-    const transHTML = t ? '<div id="ltrans"><div class="ttx'+(LN.show.trans?'':' roff2')
+    let tChunks = null;
+    if(t && segs.length > 1){
+      const parts = t.split(/,\s+/);                       /* 룩비하인드 금지: 구형 사파리는 파싱부터 죽는다 */
+      const c = parts.map((x,i)=> i < parts.length-1 ? x+',' : x);
+      if(c.length === segs.length) tChunks = c;
+    }
+    const ttxCls = 'ttx'+(LN.show.trans?'':' roff2');
+    const transTd = (g,txt)=>'<td colspan="'+spanOf(g)+'" style="text-align:left;padding-top:6px">'
+      + '<div class="'+ttxCls+'" style="width:0;white-space:nowrap;overflow:visible;'
+      + 'font-size:'+fsOf('trans')+'px;padding:0 0 0 3px">'+esc(txt||'')+'</div></td>';
+    const transRowH = Math.round(fsOf('trans')*1.55);
+    const transHTML = t ? '<div id="ltrans"><div class="'+ttxCls
            + '" style="font-size:'+fsOf('trans')+'px">'+esc(t)+'</div></div>' : '';
-    const build = list =>
-      '<div id="lrow"><div id="lcol"></div><div id="lbox">'
-      + (transTop ? transHTML : '')
-      + '<div id="lflow">'+list.map(segT).join('')+'</div>'
-      + (transTop ? '' : transHTML)
-      + '</div></div>';
 
-    /* 한 줄 우선: 전체가 한 줄에 들어가면 그대로, 넘치면 호흡 덩어리로 접는다 */
-    wrap.innerHTML = build([ln.syllables]);
+    /* 한 줄 모드: 표 하나 + (정렬 가능하면) 뜻을 구간 colspan 행으로 */
+    const buildOne = ()=>{
+      const inner = '<table class="lseg"><tbody>'
+        + syOrder.map(k=>'<tr class="lr-'+k+(LN.show[k]?'':' roff')+'" style="height:'+RH[k]+'px;'+FSZ[k]+'">'
+            + rowTds(k, sy, true) + '</tr>').join('')
+        + (tChunks && !transTop
+            ? '<tr style="height:'+transRowH+'px">'+segs.map((g,i)=>transTd(g,tChunks[i])).join('')+'</tr>' : '')
+        + '</tbody></table>';
+      return '<div id="lrow"><div id="lcol"></div><div id="lbox">'
+        + (transTop ? transHTML : '')
+        + '<div id="lflow">'+inner+'</div>'
+        + (transTop || tChunks ? '' : transHTML)
+        + '</div></div>';
+    };
+    /* 접힘 모드: 구간 표마다 제 뜻 조각을 붙인다 */
+    const buildFold = ()=>{
+      const inner = segs.map((g,i)=>'<table class="lseg"><tbody>'
+        + syOrder.map(k=>'<tr class="lr-'+k+(LN.show[k]?'':' roff')+'" style="height:'+RH[k]+'px;'+FSZ[k]+'">'
+            + rowTds(k,g,i===0) + '</tr>').join('')
+        + (tChunks && !transTop
+            ? '<tr style="height:'+transRowH+'px">'+transTd(g,tChunks[i])+'</tr>' : '')
+        + '</tbody></table>').join('');
+      return '<div id="lrow"><div id="lcol"></div><div id="lbox">'
+        + (transTop ? transHTML : '')
+        + '<div id="lflow">'+inner+'</div>'
+        + (transTop || tChunks ? '' : transHTML)
+        + '</div></div>';
+    };
+
+    wrap.innerHTML = buildOne();
     if(segs.length > 1){
       const fl = document.getElementById('lflow');
-      if(fl.scrollWidth > fl.clientWidth + 1) wrap.innerHTML = build(segs);
+      if(fl.scrollWidth > fl.clientWidth + 1) wrap.innerHTML = buildFold();
     }
     placeChecks(!!t);
   }
 
-  /* 체크박스를 각 줄의 세로 중앙에 맞춘다 — 줄 높이가 달라도, 여러 줄로 접혀도 어긋나지 않는다 */
+  /* 체크박스를  /* 체크박스를 각 줄의 세로 중앙에 맞춘다 — 줄 높이가 달라도, 여러 줄로 접혀도 어긋나지 않는다 */
   function placeChecks(hasTrans){
     const box = document.getElementById('lbox'), col = document.getElementById('lcol');
     if(!box || !col) return;
@@ -2716,7 +2798,7 @@ window.addEventListener('pagehide', flushSaves);
     if(k === 'trans') return '<span style="font-size:'+fsOf('trans')+'px">'
       + esc((ln.text && ln.text.trans) || '') + '</span>';
     /* 카드 폭이 좁으면 앞의 몇 개만 — 뒤는 마스크로 흐려진다 */
-    return ln.syllables.slice(0, 14).map(y=>{
+    return (ln.syllables || []).slice(0, 14).map(y=>{   /* 뜻만 있는 대본 방어 */
       if(k === 'tone') return '<span class="sy">'+toneCell(y.tone, y.toneReal)+'</span>';
       const cls = k==='hanzi' ? 'b' : (k==='pinyin' ? 'py' : 'kr');
       const inner = k==='hanzi' ? '<b>'+esc(y.hanzi)+'</b>'

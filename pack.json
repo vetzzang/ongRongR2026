@@ -35,7 +35,8 @@
      "hanzi": "不",
      "pinyin": "bù",
      "pron": "뿌",
-     "tone": 4
+     "tone": 4,
+     "ws": 1
     },
     {
      "hanzi": "仅",
@@ -47,7 +48,8 @@
      "hanzi": "长",
      "pinyin": "zhǎng",
      "pron": "짱",
-     "tone": 3
+     "tone": 3,
+     "ws": 1
     },
     {
      "hanzi": "得",
@@ -60,13 +62,15 @@
      "pinyin": "shuài",
      "pron": "슈아이",
      "tone": 4,
-     "punct": "，"
+     "punct": "，",
+     "ws": 1
     },
     {
      "hanzi": "性",
      "pinyin": "xìng",
      "pron": "싱",
-     "tone": 4
+     "tone": 4,
+     "ws": 1
     },
     {
      "hanzi": "格",
@@ -79,13 +83,15 @@
      "pinyin": "hǎo",
      "pron": "하오",
      "tone": 3,
-     "punct": "，"
+     "punct": "，",
+     "ws": 1
     },
     {
      "hanzi": "而",
      "pinyin": "ér",
      "pron": "얼",
-     "tone": 2
+     "tone": 2,
+     "ws": 1
     },
     {
      "hanzi": "且",
@@ -97,7 +103,8 @@
      "hanzi": "演",
      "pinyin": "yǎn",
      "pron": "옌",
-     "tone": 3
+     "tone": 3,
+     "ws": 1
     },
     {
      "hanzi": "技",
@@ -110,21 +117,24 @@
      "pinyin": "hěn",
      "pron": "헌",
      "tone": 3,
-     "toneReal": 2
+     "toneReal": 2,
+     "ws": 1
     },
     {
      "hanzi": "好",
      "pinyin": "hǎo",
      "pron": "하오",
      "tone": 3,
-     "punct": "，"
+     "punct": "，",
+     "ws": 1
     },
     {
      "hanzi": "所",
      "pinyin": "suǒ",
      "pron": "소",
      "tone": 3,
-     "toneReal": 2
+     "toneReal": 2,
+     "ws": 1
     },
     {
      "hanzi": "以",
@@ -137,20 +147,23 @@
      "pinyin": "wǒ",
      "pron": "워",
      "tone": 3,
-     "toneReal": 2
+     "toneReal": 2,
+     "ws": 1
     },
     {
      "hanzi": "很",
      "pinyin": "hěn",
      "pron": "헌",
      "tone": 3,
-     "toneReal": 2
+     "toneReal": 2,
+     "ws": 1
     },
     {
      "hanzi": "喜",
      "pinyin": "xǐ",
      "pron": "시",
-     "tone": 3
+     "tone": 3,
+     "ws": 1
     },
     {
      "hanzi": "欢",
@@ -163,7 +176,8 @@
      "pinyin": "tā",
      "pron": "타",
      "tone": 1,
-     "punct": "。"
+     "punct": "。",
+     "ws": 1
     }
    ]
   },
@@ -189,7 +203,8 @@
      "hanzi": "记",
      "pinyin": "jì",
      "pron": "지",
-     "tone": 4
+     "tone": 4,
+     "ws": 1
     },
     {
      "hanzi": "得",
@@ -201,7 +216,8 @@
      "hanzi": "那",
      "pinyin": "nà",
      "pron": "나",
-     "tone": 4
+     "tone": 4,
+     "ws": 1
     },
     {
      "hanzi": "家",
@@ -213,7 +229,8 @@
      "hanzi": "面",
      "pinyin": "miàn",
      "pron": "미엔",
-     "tone": 4
+     "tone": 4,
+     "ws": 1
     },
     {
      "hanzi": "包",
@@ -231,7 +248,8 @@
      "hanzi": "旁",
      "pinyin": "páng",
      "pron": "팡",
-     "tone": 2
+     "tone": 2,
+     "ws": 1
     },
     {
      "hanzi": "边",
@@ -243,7 +261,8 @@
      "hanzi": "不",
      "pinyin": "bú",
      "pron": "부",
-     "tone": 2
+     "tone": 2,
+     "ws": 1
     },
     {
      "hanzi": "是",
@@ -255,7 +274,8 @@
      "hanzi": "文",
      "pinyin": "wén",
      "pron": "웬",
-     "tone": 2
+     "tone": 2,
+     "ws": 1
     },
     {
      "hanzi": "具",
@@ -274,7 +294,8 @@
      "hanzi": "而",
      "pinyin": "ér",
      "pron": "어",
-     "tone": 2
+     "tone": 2,
+     "ws": 1
     },
     {
      "hanzi": "是",
@@ -286,7 +307,8 @@
      "hanzi": "一",
      "pinyin": "yì",
      "pron": "이",
-     "tone": 4
+     "tone": 4,
+     "ws": 1
     },
     {
      "hanzi": "家",
@@ -298,7 +320,8 @@
      "hanzi": "化",
      "pinyin": "huà",
      "pron": "화",
-     "tone": 4
+     "tone": 4,
+     "ws": 1
     },
     {
      "hanzi": "妆",
@@ -343,7 +366,8 @@
      "hanzi": "虽",
      "pinyin": "suī",
      "pron": "수이",
-     "tone": 1
+     "tone": 1,
+     "ws": 1
     },
     {
      "hanzi": "然",
@@ -355,20 +379,23 @@
      "hanzi": "很",
      "pinyin": "hěn",
      "pron": "헌",
-     "tone": 3
+     "tone": 3,
+     "ws": 1
     },
     {
      "hanzi": "忙",
      "pinyin": "máng",
      "pron": "망",
      "tone": 2,
-     "punct": "，"
+     "punct": "，",
+     "ws": 1
     },
     {
      "hanzi": "但",
      "pinyin": "dàn",
      "pron": "단",
-     "tone": 4
+     "tone": 4,
+     "ws": 1
     },
     {
      "hanzi": "是",
@@ -380,7 +407,8 @@
      "hanzi": "每",
      "pinyin": "měi",
      "pron": "메이",
-     "tone": 3
+     "tone": 3,
+     "ws": 1
     },
     {
      "hanzi": "天",
@@ -392,13 +420,15 @@
      "hanzi": "都",
      "pinyin": "dōu",
      "pron": "도우",
-     "tone": 1
+     "tone": 1,
+     "ws": 1
     },
     {
      "hanzi": "坚",
      "pinyin": "jiān",
      "pron": "지안",
-     "tone": 1
+     "tone": 1,
+     "ws": 1
     },
     {
      "hanzi": "持",
@@ -410,7 +440,8 @@
      "hanzi": "学",
      "pinyin": "xué",
      "pron": "슈에",
-     "tone": 2
+     "tone": 2,
+     "ws": 1
     },
     {
      "hanzi": "习",
@@ -422,7 +453,8 @@
      "hanzi": "汉",
      "pinyin": "hàn",
      "pron": "한",
-     "tone": 4
+     "tone": 4,
+     "ws": 1
     },
     {
      "hanzi": "语",
