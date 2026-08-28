@@ -2371,7 +2371,7 @@ window.addEventListener('drop', e=>{ if(e.dataTransfer.files.length) importFiles
 /* ===== 새 버전 알림 =====
    GitHub에 새 index.html 을 올리면, 앱이 알아채고 아래에 알림을 띄운다.
    누르면 캐시를 비우고 새로 받는다. 불러온 음원과 설정은 그대로 남는다. */
-const APP_VERSION = 'v1.4.2';
+const APP_VERSION = 'v1.5.0';
 const APP_DATE = '2026-08-28';
 let verChecked = 0;
 
@@ -2622,8 +2622,12 @@ window.addEventListener('pagehide', flushSaves);
     const syOrder = LN.order.filter(k=>k!=='trans');
     const transTop = LN.order.indexOf('trans') === 0;
     const RH={}, FSZ={};
+    /* [a안] 다섯 줄 전부 한자 최대 크기(레벨 3) 박스 높이로 통일·고정 —
+       어떤 줄의 크기를 줄여도 행 높이가 출렁이지 않고, 체크박스 위치가
+       행 가운데에 그대로 고정된다. 글자·도형은 vertical-align:middle. */
+    const ROWBOX = Math.round(BASE.hanzi*STEP[MAXSZ.hanzi-1]*1.5);
     for(const k of syOrder){
-      RH[k]  = k==='tone' ? tdim().h : Math.round(fsOf(k)*1.5);
+      RH[k]  = ROWBOX;
       FSZ[k] = k==='tone' ? '' : 'font-size:'+fsOf(k)+'px';
     }
     const cell = (k,y)=>
@@ -2643,25 +2647,34 @@ window.addEventListener('pagehide', flushSaves);
     for(const y of sy){ cur.push(y); if(y.punct){ segs.push(cur); cur=[]; } }
     if(cur.length) segs.push(cur);
 
-    /* 병음·독음은 단어 정보만 있으면 항상 단어 단위 병합(정서법 기본) —
-       도끼(sp)는 한자 사이 간격(스페이서)만 담당한다.
-       뜻 줄처럼 width:0 트릭으로 열 폭을 밀지 않고 첫 한자 왼쪽에서 시작. */
+    /* 병음·독음은 단어 정보만 있으면 항상 단어 단위(정서법 기본).
+       한자 열에 단어 위치를 맞추지 않는다 — 자주 겹치기 때문. 줄 전체를
+       하나의 자연스러운 글줄로 두고 각 단어가 원래 폭대로 흘러가게 한다.
+       (프로젝트 원칙: 성조·병음 셀 너비를 서로 연동하지 말 것) */
     const rowTds = (k,g,first)=>{
       if(hasWS && (k==='pinyin'||k==='pron')){
         const words=[]; let w=null;
         g.forEach((y,j)=>{ if(!w || y.ws){ w={j0:j, ys:[]}; words.push(w); } w.ys.push(y); });
-        return words.map(w=>{
-          const span = w.ys.reduce((a,y)=>a+1+(y.punct?1:0),0);
+        const parts = words.map(w=>{
           let txt = w.ys.map(y=> k==='pinyin'? (y.pinyin||'') : (y.pron||'')).join('');
           const last = w.ys[w.ys.length-1];
           if(last.punct) txt += (last.punct==='，'?',': last.punct==='。'?'': last.punct);
           if(k==='pinyin' && first && w.j0===0 && txt)
             txt = txt.charAt(0).toUpperCase()+txt.slice(1);   /* 문장 첫 단어만 Yóuyú 식 */
-          return (needSp(g,w.j0)?'<td class="wsp"></td>':'')
-            + '<td colspan="'+span+'" style="text-align:left">'
-            + '<div style="width:0;white-space:nowrap;overflow:visible;padding-left:1.5px">'
-            + '<span class="'+(k==='pinyin'?'py':'kr')+'">'+esc(txt)+'</span></div></td>';
-        }).join('');
+          return txt;
+        });
+        /* 도끼 ON: 단어가 제 한자 블록 위치를 따라간다(colspan). 단어가 블록보다
+           넓으면 열이 확장되어 그 한자들이 벌어져 받아준다 — 겹침 불가.
+           도끼 OFF: 자연 글줄 하나 — 촘촘하되 역시 겹침 불가. */
+        if(sp){
+          return words.map((w,wi)=>
+            (needSp(g,w.j0)?'<td class="wsp"></td>':'')
+            + '<td colspan="'+w.ys.reduce((a,y)=>a+1+(y.punct?1:0),0)+'" style="text-align:left">'
+            + '<span class="'+(k==='pinyin'?'py':'kr')+'">'+esc(parts[wi]||'')+'</span></td>'
+          ).join('');
+        }
+        return '<td colspan="'+spanOf(g)+'" style="text-align:left">'
+          + '<span class="'+(k==='pinyin'?'py':'kr')+'">'+esc(parts.filter(Boolean).join(' '))+'</span></td>';
       }
       return g.map((y,j)=> (needSp(g,j)?'<td class="wsp"></td>':'')
           + '<td>'+cell(k,y)+'</td>'
@@ -2680,12 +2693,13 @@ window.addEventListener('pagehide', flushSaves);
       if(c.length === segs.length) tChunks = c;
     }
     const ttxCls = 'ttx'+(LN.show.trans?'':' roff2');
-    const transTd = (g,txt)=>'<td colspan="'+spanOf(g)+'" style="text-align:left;padding-top:6px">'
-      + '<div class="'+ttxCls+'" style="width:0;white-space:nowrap;overflow:visible;'
-      + 'font-size:'+fsOf('trans')+'px;padding:0 0 0 1.5px">'+esc(txt||'')+'</div></td>';
-    const transRowH = Math.round(fsOf('trans')*1.55);
+    const transTd = (g,txt)=>'<td colspan="'+spanOf(g)+'" style="text-align:left;vertical-align:middle">'
+      + '<div class="'+ttxCls+'" style="white-space:normal;'
+      + 'font-size:'+fsOf('trans')+'px;padding:0">'+esc(txt||'')+'</div></td>';
+    const transRowH = ROWBOX;   /* 뜻 행도 같은 박스 */
     const transHTML = t ? '<div id="ltrans"><div class="'+ttxCls
-           + '" style="font-size:'+fsOf('trans')+'px">'+esc(t)+'</div></div>' : '';
+           + '" style="font-size:'+fsOf('trans')+'px;min-height:'+ROWBOX
+           + 'px;display:flex;align-items:center">'+esc(t)+'</div></div>' : '';
 
     /* 한 줄 모드: 표 하나 + (정렬 가능하면) 뜻을 구간 colspan 행으로 */
     const buildOne = ()=>{
