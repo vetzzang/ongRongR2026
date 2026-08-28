@@ -52,7 +52,8 @@
   .tb svg{width:30px;height:30px;stroke:var(--ink);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;}
   /* 아이콘마다 실제로 차지하는 면적이 달라서, 눈에 같은 크기로 보이도록 개별 보정 */
   .tb svg text{fill:var(--ink);stroke:none;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
-  #bSplit.on svg{stroke:var(--green)}
+  #bSplit svg path{fill:var(--ink);stroke:var(--ink)}
+  #bSplit.on svg path{fill:var(--green);stroke:var(--green)}
   td.wsp{width:13px;min-width:13px;padding:0}
   #bFolder svg{transform:scale(1.02)}
   #bSet    svg{transform:scale(.92)}
@@ -104,8 +105,8 @@
 
   /* stage */
   #stage{position:relative;margin:6px 0}  /* 높이 규칙은 아래 '유동 무대' 블록 한 곳에서만 */
-  #next{position:absolute;width:112px;height:112px;border-radius:50%;background:var(--next);
-    color:var(--nextInk);font-weight:700;letter-spacing:.14em;font-size:15px;
+  #next{position:absolute;width:129px;height:129px;border-radius:50%;background:var(--next);
+    color:var(--nextInk);font-weight:800;letter-spacing:.14em;font-size:18px;
     display:grid;place-items:center;touch-action:none;
     box-shadow:0 10px 30px rgba(0,0,0,.45);transition:box-shadow .2s}
   #next:disabled{opacity:.35}
@@ -352,7 +353,7 @@
     .cb2{width:19px;height:19px;font-size:10px}
     #lflow{column-gap:15px;row-gap:8px}
     #stage{min-height:clamp(96px,13vh,140px)}
-    #next{width:96px;height:96px;font-size:14px}
+    #next{width:110px;height:110px;font-size:17px}
     #wheel{height:96px;
       -webkit-mask-image:linear-gradient(180deg,transparent 0,#000 30%,#000 70%,transparent 100%);
       mask-image:linear-gradient(180deg,transparent 0,#000 30%,#000 70%,transparent 100%)}
@@ -400,7 +401,7 @@
   <div class="bar">
     <button class="tb" id="bFolder" aria-label="파일"><svg viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></button>
     <button class="tb" id="bRepeat" aria-label="반복 모드"><svg viewBox="0 0 24 24" id="repIcon"><path d="M7.5 7.5a4.5 4.5 0 1 0 0 9c4.5 0 4.5-9 9-9a4.5 4.5 0 1 1 0 9c-4.5 0-4.5-9-9-9z"/></svg></button>
-    <button class="tb" id="bSplit" aria-label="단어 띄어 보기"><svg viewBox="0 0 24 24" id="splitIcon"><path d="M4.8 20.6 L12.6 9.4"/><path d="M9.6 8.6 L14.1 4.1 l1.9 1.9 c1.5 1.5 3.4 2.1 5.3 1.8 0 3.1 -1.5 6 -4.1 7.7 -0.4 -1.9 -1.4 -3.5 -2.8 -4.9 z"/></svg></button>
+    <button class="tb" id="bSplit" aria-label="단어 띄어 보기"><svg viewBox="0 0 24 24" id="splitIcon"><g transform="translate(-7.04,-6.63) scale(0.05831) translate(0,640) scale(0.1,-0.1)"><path fill-rule="evenodd" stroke-width="109" stroke-linejoin="round" stroke-linecap="round" d="M3590 4881 c-80 -26 -104 -49 -198 -187 -56 -82 -72 -100 -99 -105 -98 -19 -119 -45 -307 -362 -183 -309 -197 -353 -145 -466 11 -25 18 -50 15 -57 -14 -37 -405 -566 -686 -929 -181 -233 -383 -497 -507 -660 -173 -228 -131 -454 105 -563 191 -88 284 -35 484 276 159 247 324 484 503 722 149 198 572 750 586 765 49 51 350 -399 430 -641 67 -203 148 -235 330 -129 406 235 729 665 846 1125 75 295 20 372 -247 349 -255 -21 -485 25 -675 138 -65 38 -65 45 -6 126 132 180 112 289 -84 454 -163 137 -253 174 -345 144z m203 -235 c171 -138 178 -158 96 -271 -65 -90 -50 -93 -229 41 -189 141 -179 125 -120 214 86 129 110 130 253 16z m-164 -405 c446 -333 716 -427 1091 -383 104 13 104 14 85 -83 -82 -429 -405 -881 -782 -1091 -74 -42 -71 -44 -107 61 -118 345 -328 614 -706 900 -289 220 -280 174 -94 489 221 375 169 364 513 107z m-523 -718 c57 -43 106 -83 108 -90 3 -7 -70 -110 -162 -230 -598 -779 -674 -884 -916 -1263 -193 -301 -275 -334 -393 -161 -70 102 -96 59 567 916 255 329 339 440 534 713 161 224 133 212 262 115z"/></g></svg></button>
     <button class="tb" id="bPlay" aria-label="재생"><svg viewBox="0 0 24 24" id="playIcon"><path d="M7 4.5l12 7.5-12 7.5z"/></svg></button>
     <div class="spd">
       <button id="bSlow" aria-label="느리게"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button>
