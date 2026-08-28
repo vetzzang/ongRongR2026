@@ -2370,7 +2370,7 @@ window.addEventListener('drop', e=>{ if(e.dataTransfer.files.length) importFiles
 /* ===== 새 버전 알림 =====
    GitHub에 새 index.html 을 올리면, 앱이 알아채고 아래에 알림을 띄운다.
    누르면 캐시를 비우고 새로 받는다. 불러온 음원과 설정은 그대로 남는다. */
-const APP_VERSION = 'v1.2.4';
+const APP_VERSION = 'v1.4.0';
 const APP_DATE = '2026-08-28';
 let verChecked = 0;
 
@@ -2589,8 +2589,8 @@ window.addEventListener('pagehide', flushSaves);
   const esc = t => String(t==null?'':t).replace(/[&<>]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
 
   /* ---------- 렌더 — 다섯 줄이 한 박스, 순서·크기는 줄마다 따로 ---------- */
-  /* 단어 띄어 보기(도끼 토글): 켜면 ws 경계마다 스페이서 칸을 5줄 전체에 넣고,
-     병음·독음은 단어 단위로 합쳐 그 단어의 첫 한자 왼쪽에 맞춰 시작한다. */
+  /* 도끼 토글: 켜면 단어(ws) 경계마다 한자 사이가 벌어진다(전 행 공통 스페이서 칸).
+     병음·독음의 단어 병합은 토글과 무관 — 단어 정보가 있으면 항상 정서법대로. */
   let WSPLIT = 0;
   try{ WSPLIT = +localStorage.getItem('ongal_wsplit') || 0; }catch(e){}
   (function(){
@@ -2642,10 +2642,11 @@ window.addEventListener('pagehide', flushSaves);
     for(const y of sy){ cur.push(y); if(y.punct){ segs.push(cur); cur=[]; } }
     if(cur.length) segs.push(cur);
 
-    /* 한 행의 칸들 — 띄어 보기 ON 이면 병음·독음은 단어 단위 병합(colspan),
-       뜻 줄처럼 width:0 트릭으로 열 폭을 밀지 않고 첫 한자 왼쪽에서 시작한다 */
+    /* 병음·독음은 단어 정보만 있으면 항상 단어 단위 병합(정서법 기본) —
+       도끼(sp)는 한자 사이 간격(스페이서)만 담당한다.
+       뜻 줄처럼 width:0 트릭으로 열 폭을 밀지 않고 첫 한자 왼쪽에서 시작. */
     const rowTds = (k,g,first)=>{
-      if(sp && (k==='pinyin'||k==='pron')){
+      if(hasWS && (k==='pinyin'||k==='pron')){
         const words=[]; let w=null;
         g.forEach((y,j)=>{ if(!w || y.ws){ w={j0:j, ys:[]}; words.push(w); } w.ys.push(y); });
         return words.map(w=>{
@@ -3131,8 +3132,11 @@ window.addEventListener('pagehide', flushSaves);
   })();
   function splitPinyin(line){
     const out = [];
-    /* 아포스트로피는 음절 경계다 (Xī'ān) */
-    for(const w of String(line||'').split(/\s+/).flatMap(x => x.split(/['\u2019]/))){
+    /* 공백 = 단어 경계(파일 표기 그대로 ws 에 보존) / 아포스트로피 = 음절 경계일 뿐 (Xī'ān) */
+    for(const chunk of String(line||'').split(/\s+/)){
+      let wordStart = true;                     /* 이 청크에서 처음 내보내는 음절에 ws */
+      const mark = o => { if(wordStart){ o.ws = 1; wordStart = false; } return o; };
+    for(const w of chunk.split(/['\u2019]/)){
       if(!w) continue;
       const disp=[], base=[], tones=[];
       for(const ch of w){
@@ -3153,14 +3157,15 @@ window.addEventListener('pagehide', flushSaves);
         if(!hit){ ok=false; break; }
         cut.push(hit); i += hit.length;
       }
-      if(!ok){ out.push({ py:w, tone:0, bad:true }); continue; }
+      if(!ok){ out.push(mark({ py:w, tone:0, bad:true })); continue; }
       let p=0;
       for(const c of cut){
         let t=0;
         for(let k=p;k<p+c.length;k++) if(tones[k]) t=tones[k];
-        out.push({ py: disp.slice(p, p+c.length).join(''), tone: t||5 });
+        out.push(mark({ py: disp.slice(p, p+c.length).join(''), tone: t||5 }));
         p += c.length;
       }
+    }
     }
     return out;
   }
@@ -3171,7 +3176,8 @@ window.addEventListener('pagehide', flushSaves);
     const alt=[];
     for(const y of list){
       const m = /^(.+)r$/i.exec(y.py||'');
-      if(m) { alt.push({ py:m[1], tone:y.tone }); alt.push({ py:'r', tone:5 }); }
+      if(m) { const h={ py:m[1], tone:y.tone }; if(y.ws) h.ws=1;
+              alt.push(h); alt.push({ py:'r', tone:5 }); }
       else alt.push(y);
     }
     return alt.length === n ? alt : list;
@@ -3216,7 +3222,7 @@ window.addEventListener('pagehide', flushSaves);
       if(py){
         const ps = alignPinyin(splitPinyin(py), syl.length);
         if(ps.length === syl.length && !ps.some(x=>x.bad))
-          ps.forEach((x,i)=>{ syl[i].pinyin = x.py; syl[i].tone = x.tone; });
+          ps.forEach((x,i)=>{ syl[i].pinyin = x.py; syl[i].tone = x.tone; if(x.ws) syl[i].ws = 1; });
         else rest.unshift({ t:py, k:'latin' });   /* 못 맞추면 글자 줄로 내려보낸다 */
       }
     } else if(py) rest.unshift({ t:py, k:'latin' });
