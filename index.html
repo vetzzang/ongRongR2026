@@ -225,6 +225,7 @@
   .ring{width:44px;height:44px;border-radius:50%;border:3px solid var(--panel2);border-top-color:var(--green);
     animation:spin .9s linear infinite}
   @keyframes spin{to{transform:rotate(360deg)}}
+  #busyTxt{font-size:13.5px;color:var(--dim);letter-spacing:.02em}
   #busyBar{width:190px;height:4px;border-radius:2px;background:var(--panel2);overflow:hidden}
   #busyBar i{display:block;height:100%;width:0;background:var(--green);transition:width .25s}
 
@@ -526,7 +527,7 @@
   </div>
 </div>
 
-<div id="busy"><div class="ring"></div><div id="busyBar"><i></i></div></div>
+<div id="busy"><div class="ring"></div><div id="busyTxt">Analyzing voice data...</div><div id="busyBar"><i></i></div></div>
 <div class="toast" id="toast"></div>
 <div id="newver"><span>새 버전이 있습니다</span><button id="nvGo">새로고침</button></div>
 <audio id="au" preload="auto"></audio>
@@ -2370,7 +2371,7 @@ window.addEventListener('drop', e=>{ if(e.dataTransfer.files.length) importFiles
 /* ===== 새 버전 알림 =====
    GitHub에 새 index.html 을 올리면, 앱이 알아채고 아래에 알림을 띄운다.
    누르면 캐시를 비우고 새로 받는다. 불러온 음원과 설정은 그대로 남는다. */
-const APP_VERSION = 'v1.4.0';
+const APP_VERSION = 'v1.4.2';
 const APP_DATE = '2026-08-28';
 let verChecked = 0;
 
@@ -3236,9 +3237,16 @@ window.addEventListener('pagehide', flushSaves);
     if(syl.length && korAt.length){
       const cand = korAt[0], toks = rest[cand].t.split(/\s+/).filter(Boolean);
       const enough = korAt.length >= 2 || syl.length >= 6;
+      /* 단어 시작 인덱스 (병음 띄어쓰기에서 온 ws) — 독음이 단어 단위로 적힌 파일 대응 */
+      const wIdx = syl.map((y,i)=> (i===0 || y.ws) ? i : -1).filter(i=>i>=0);
+      const hasW = syl.some(y=>y.ws);
       if(enough && toks.length === syl.length){
         pronAt = cand; text.pron = rest[cand].t;
         toks.forEach((w,i)=>{ syl[i].pron = w; });
+      } else if(enough && hasW && toks.length === wIdx.length){
+        /* 어절 수 = 단어 수: 각 어절을 단어 첫 음절에 싣는다 (표시가 단어 병합이라 그대로 맞음) */
+        pronAt = cand; text.pron = rest[cand].t;
+        toks.forEach((w,i)=>{ syl[wIdx[i]].pron = w; });
       }
     }
     text.trans = rest.filter((x,i)=> i !== pronAt).map(x=>x.t).join(' ').trim();
