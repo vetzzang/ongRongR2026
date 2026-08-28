@@ -261,7 +261,7 @@
     column-gap:22px;row-gap:calc(var(--lgap)*2);overflow-x:auto;scrollbar-width:none}
   #lflow::-webkit-scrollbar{display:none}
   table.lseg{border-collapse:collapse;flex:0 0 auto}
-  table.lseg td{padding:calc(var(--lgap)/2) 3px;text-align:center;vertical-align:middle;white-space:nowrap}
+  table.lseg td{padding:calc(var(--lgap)/2) 1.5px;text-align:center;vertical-align:middle;white-space:nowrap}
   table.lseg td.pct{padding-left:0;padding-right:10px;text-align:left}   /* 구두점 전용 칸 */
   /* 다섯 줄 모두 같은 밝기 — 줄마다 톤이 다르면 눈이 밝은 줄로만 간다.
      끈 줄만 어둡다(tr.roff / .roff2 의 opacity). */
@@ -269,7 +269,7 @@
   table.lseg b{color:var(--ink)}
   tr.roff td{opacity:.13}
   #ltrans{margin-top:0;padding-top:0;border-top:0}
-  #ltrans .ttx{line-height:1.55;padding:calc(var(--lgap)/2) 3px;color:var(--ink)}
+  #ltrans .ttx{line-height:1.55;padding:calc(var(--lgap)/2) 1.5px;color:var(--ink)}
   #ltrans .ttx.roff2{opacity:.13}
   table.lseg .ttx{color:var(--ink);line-height:1.55}
   table.lseg .ttx.roff2{opacity:.13}
@@ -346,7 +346,7 @@
     #capTx .cl{font-size:13.5px}
     .meta{padding:7px 14px 0}
     #lines{padding:2px 0}
-    table.lseg td{padding:calc(var(--lgap)/2) 2px}
+    table.lseg td{padding:calc(var(--lgap)/2) 1px}
     #lbox{--lgap:5px}
     #lrow{gap:8px;padding:7px 8px}
     #lcol{flex:0 0 19px}
@@ -2466,7 +2466,7 @@ window.addEventListener('pagehide', flushSaves);
      학습자에 따라 먼저 보고 싶은 줄이 다르기 때문. 메인 화면이 이 순서를 그대로 쓴다. */
   const LK = 'ongal_lines_v2';
   const ROWS  = ['tone','pinyin','hanzi','pron','trans'];
-  const MAXSZ = { tone:2, pinyin:3, hanzi:4, pron:3, trans:3 };
+  const MAXSZ = { tone:2, pinyin:2, hanzi:3, pron:3, trans:3 };
   const DEFAULT_LN = () => ({
     order:['tone','pinyin','hanzi','pron','trans'],
     size:{tone:1,pinyin:1,hanzi:1,pron:1,trans:1},
@@ -2510,7 +2510,7 @@ window.addEventListener('pagehide', flushSaves);
   /* ---------- 크기 체계 ----------
      레벨 1이 기존 기본 화면과 같은 크기. 레벨이 오를수록 그 줄만 커진다.
      성조는 최대 2단계, 한자는 4단계 — 줄마다 상한이 다르다. */
-  const BASE = { pinyin:13, hanzi:20, pron:12, trans:16 };
+  const BASE = { pinyin:12, hanzi:20, pron:12, trans:12 };
   const STEP = [1, 1.3, 1.65, 2.05];
   const TDIM = [{w:8,h:8,s:0.6},{w:10,h:10,s:0.77}];   /* 절반에서 15% 더 축소 */
   const TCOL = {1:'#5B9CF6',2:'#3DC9A0',3:'#E8643A',4:'#E870A8',5:'#888888'};
@@ -2657,7 +2657,7 @@ window.addEventListener('pagehide', flushSaves);
             txt = txt.charAt(0).toUpperCase()+txt.slice(1);   /* 문장 첫 단어만 Yóuyú 식 */
           return (needSp(g,w.j0)?'<td class="wsp"></td>':'')
             + '<td colspan="'+span+'" style="text-align:left">'
-            + '<div style="width:0;white-space:nowrap;overflow:visible;padding-left:3px">'
+            + '<div style="width:0;white-space:nowrap;overflow:visible;padding-left:1.5px">'
             + '<span class="'+(k==='pinyin'?'py':'kr')+'">'+esc(txt)+'</span></div></td>';
         }).join('');
       }
@@ -2680,7 +2680,7 @@ window.addEventListener('pagehide', flushSaves);
     const ttxCls = 'ttx'+(LN.show.trans?'':' roff2');
     const transTd = (g,txt)=>'<td colspan="'+spanOf(g)+'" style="text-align:left;padding-top:6px">'
       + '<div class="'+ttxCls+'" style="width:0;white-space:nowrap;overflow:visible;'
-      + 'font-size:'+fsOf('trans')+'px;padding:0 0 0 3px">'+esc(txt||'')+'</div></td>';
+      + 'font-size:'+fsOf('trans')+'px;padding:0 0 0 1.5px">'+esc(txt||'')+'</div></td>';
     const transRowH = Math.round(fsOf('trans')*1.55);
     const transHTML = t ? '<div id="ltrans"><div class="'+ttxCls
            + '" style="font-size:'+fsOf('trans')+'px">'+esc(t)+'</div></div>' : '';
