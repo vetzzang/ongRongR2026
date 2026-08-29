@@ -13,6 +13,11 @@
 <link rel="apple-touch-icon" href="./apple-touch-icon.png">
 <meta name="apple-mobile-web-app-title" content="옹알옹알">
 <style>
+  @font-face{
+    font-family:'NotoCJK';
+    src:url('fonts/NotoSansCJKsc-sub.woff2') format('woff2');
+    font-weight:400; font-display:swap;
+  }
   :root{
     --bg:#0d1117; --panel:#202838; --panel2:#2a3446; --line:#2b3546;
     --ink:#e8edf5; --dim:#79839a; --dim2:#4d566b;
@@ -25,7 +30,7 @@
   html,body{margin:0;height:100%;overflow:hidden;overscroll-behavior:none;}
   body{
     background:var(--bg); color:var(--ink);
-    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans KR",sans-serif;
+    font-family:'NotoCJK',-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans KR",sans-serif;
     font-size:15px; line-height:1.4; user-select:none;
   }
   .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-variant-numeric:tabular-nums;}
@@ -2375,7 +2380,7 @@ window.addEventListener('drop', e=>{ if(e.dataTransfer.files.length) importFiles
 /* ===== 새 버전 알림 =====
    GitHub에 새 index.html 을 올리면, 앱이 알아채고 아래에 알림을 띄운다.
    누르면 캐시를 비우고 새로 받는다. 불러온 음원과 설정은 그대로 남는다. */
-const APP_VERSION = 'v1.5.10';
+const APP_VERSION = 'v1.6.0';
 const APP_DATE = '2026-08-28';
 let verChecked = 0;
 
