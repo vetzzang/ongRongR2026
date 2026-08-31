@@ -79,7 +79,15 @@
   /* waveforms */
   .waves{padding:0 12px;}
   .wrap{position:relative;border-radius:10px;overflow:hidden;background:#05080d;}
-  #wOver{height:52px;touch-action:none;cursor:grab} #wZoom{height:52px} #wRhy{height:78px}
+  #wOver{height:52px;cursor:grab} #wZoom{height:52px} #wRhy{height:78px}
+  /* 상단 파형 = 진짜 가로 스크롤 영역. 관성·감속·손맛은 파일 휠과 같은 브라우저 것.
+     캔버스는 위에 고정된 채 스크롤 위치에 맞는 구간만 그린다. 스냅 지점은 문장 가운데마다 하나. */
+  #cOver{position:absolute;inset:0;pointer-events:none}
+  #ovScroll{position:absolute;inset:0;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;
+            touch-action:pan-x;scrollbar-width:none}
+  #ovScroll::-webkit-scrollbar{display:none}
+  #ovTrack{position:relative;height:100%}
+  .ovSnap{position:absolute;top:0;width:1px;height:100%;scroll-snap-align:center}
   .wrap+.wrap{margin-top:4px}
   /* 자막 띠 — srt 가 붙은 파일에서만 나타난다. 없으면 아예 자리를 차지하지 않는다. */
   #wCap{display:none;align-items:center;padding:6px 12px}
@@ -423,7 +431,7 @@
 
   <!-- 파형 3줄을 먼저, 바로 밑에 정보 한 줄: 문장 카운터 · 현재 시간 · 총 시간 -->
   <div class="waves">
-    <div class="wrap" id="wOver"><canvas id="cOver"></canvas></div>
+    <div class="wrap" id="wOver"><canvas id="cOver"></canvas><div id="ovScroll"><div id="ovTrack"></div></div></div>
     <div class="wrap" id="wZoom"><canvas id="cZoom"></canvas></div>
     <div class="wrap" id="wRhy"><canvas id="cRhy"></canvas></div>
     <div class="meta">
@@ -1554,7 +1562,7 @@ function load(i, fromStart){
   /* 사용자가 직접 고른 파일은 듣던 자리에서, 자동으로 넘어온 파일은 처음부터. */
   S.sent=f.sent; S.si=fromStart ? 0 : clamp(f.last||0,0,S.sent.length-1); S.reps=0;
   S.wantPlay=false;                              /* 파일을 새로 열면 저절로 나지 않는다 */
-  OV.gmax=0; OV.winFor=-1; OV.drag=false;
+  OV.gmax=0; OV.key=''; OV.user=false; OV.prog=false; OV.shown=-1;
   waStop(); WA.buf=null; WA.off=0; P.mode='el'; updateEngineText();
   toneInit(f);                                   /* 성조 준비는 뒤에서 (재생을 막지 않는다) */
   tryList = mimeCandidates({name:f.name, type:(f.blob&&f.blob.type)||''});
@@ -1906,7 +1914,12 @@ function toneScale(){
    ========================================================================= */
 const cv = { over:$('#cOver'), zoom:$('#cZoom'), rhy:$('#cRhy') };
 /* 상단 파형의 보기 창 상태 */
-const OV = { drag:false, t:0, win:12, winFor:-1, focus:0, t0:0, t1:0, gmax:0 };
+/* 상단 파형 스크롤 상태.
+   pps   = 초당 픽셀(파일당 한 번, 앞뒤 3문장이 한 화면에 드는 중간값으로) — 문장을 넘길 때 배율이 튀지 않는다
+   user  = 손으로 미는 중(놓고 미끄러지는 동안 포함). 이때는 재생선을 숨기고 자동 따라가기를 멈춘다
+   prog  = 프로그램이 옮기는 중. 이 사이 오는 scroll 이벤트는 사용자 조작이 아니다
+   shown = 마지막으로 가운데에 맞춰 준 문장 번호. S.si 와 다르면 부드럽게 옮긴다 */
+const OV = { pps:0, key:'', sentRef:null, w:0, user:false, prog:false, hold:false, shown:-1, focus:0, t0:0, t1:0, gmax:0 };
 /* 두 번째 칸을 첫 번째 칸 높이(52px)로 줄였다. 세로만 줄이면 파형이 납작해지므로
    가로도 같은 비율로 줄여 모양을 그대로 유지한다. 세 번째 칸도 같은 가로 범위를 써서
    재생 막대가 위아래로 정확히 맞는다. */
@@ -1953,54 +1966,43 @@ function paintProgress(t){
   const key = S.si+'|'+Math.round(t*30);
   if(key===cache.key) return; cache.key=key;
 
-  /* --- 상단: 현재 문장 앞뒤 3개만 (옆으로 밀어 찾기) --- */
+  /* --- 상단: 가로 스크롤 파형. 배율 고정, 가운데 선이 가리키는 문장 강조 --- */
   {
     const {g,w,h}=fit(cv.over); g.clearRect(0,0,w,h);
     const mids = S.sent.map(x=>(x.s+x.e)/2);
-
-    // 창 너비 — 현재 문장 앞뒤 3개를 담을 만큼. 미는 동안 흔들리지 않게 고정.
-    if(OV.winFor !== S.si){
-      /* 앞 3개 + 현재 + 뒤 3개가 걸치는 '실제 시간 폭'.
-         문장 길이의 합이 아니라 첫 문장 시작 ~ 마지막 문장 끝까지.
-         (문장 사이 정적을 잘라냈기 때문에 둘은 크게 다르다) */
-      const N=S.sent.length;
-      let a0=S.si-3, a1=S.si+3;
-      if(a0<0){ a1 += -a0; a0=0; }
-      if(a1>N-1){ a0 -= (a1-(N-1)); a1=N-1; }
-      a0=Math.max(0,a0); a1=Math.min(N-1,a1);
-      OV.win = Math.max(3, S.sent[a1].e - S.sent[a0].s);
-      OV.winFor = S.si;
-    }
-    const ft = OV.drag ? OV.t : mids[S.si];
-    /* 창이 파일 밖으로 나가면 안쪽으로 밀어 넣는다.
-       (밖으로 나간 채 두면 그리는 범위와 좌표 계산이 어긋나
-        첫 문장이 가운데 있는 것처럼 보인다) */
-    let t0 = ft - OV.win/2, t1 = ft + OV.win/2;
-    if(t1 > dur){ t0 -= (t1-dur); t1 = dur; }
-    if(t0 < 0){ t1 = Math.min(dur, t1 - t0); t0 = 0; }
-    OV.t0=t0; OV.t1=t1;                                   // 터치 위치 계산에 쓴다
+    ovSync(w, dur, mids);                                    // 배율·트랙 폭·스냅·자동 따라가기
+    const sc=$('#ovScroll'), pps=OV.pps, half=w/2;
+    /* 트랙 좌표: 시각 tt 는 tt*pps + half 에 있다. 뷰포트 가운데(half)에 오는 시각 = scrollLeft/pps */
+    const ft = sc.scrollLeft/pps;
+    const t0 = ft - half/pps, t1 = ft + half/pps;
+    OV.t0=t0; OV.t1=t1;
+    const X = tt => (tt-t0)*pps;
 
     if(!OV.gmax){ let m=0; for(let i=0;i<env.length;i++) if(env[i]>m) m=env[i]; OV.gmax=m||1; }
-    const cols=Math.round(w);
-    const key2=Math.round(t0*25)+'|'+Math.round(t1*25)+'|'+cols+'|'+S.files[S.cur].id;
-    if(!cache.over || cache.over.k!==key2){
-      const ia=Math.max(0,Math.floor(t0/hop)), ib=Math.min(env.length,Math.ceil(t1/hop));
-      cache.over={k:key2, p:peaks(env, ia, ib, cols, OV.gmax)};
+    /* 파일 범위 밖(첫 문장 앞·마지막 문장 뒤의 빈 공간)은 그리지 않는다 */
+    const xs=Math.max(0, Math.round(X(0))), xe=Math.min(w, Math.round(X(dur)));
+    const cols=Math.max(0, xe-xs);
+    const key2=Math.round(sc.scrollLeft)+'|'+cols+'|'+xs+'|'+S.files[S.cur].id;
+    if(cols>0 && (!cache.over || cache.over.k!==key2)){
+      const ia=Math.max(0,Math.floor(Math.max(0,t0)/hop)), ib=Math.min(env.length,Math.ceil(Math.min(dur,t1)/hop));
+      cache.over={k:key2, p:peaks(env, ia, Math.max(ia+1,ib), cols, OV.gmax)};
     }
-    const p=cache.over.p, mid=h/2;
-    const X = tt => ((tt-t0)/(t1-t0))*w;
+    const mid=h/2;
 
     // 가운데 선이 가리키는 문장
     let fi=0, best=Infinity;
     for(let i=0;i<mids.length;i++){ const d=Math.abs(mids[i]-ft); if(d<best){best=d; fi=i;} }
     OV.focus=fi;
     const fs=S.sent[fi];
-
     const cs=X(fs.s), ce=X(fs.e);
-    for(let i=0;i<cols;i++){
-      const v=Math.max(0.02,p[i])*(h*0.44);
-      g.fillStyle = (i>=cs && i<ce) ? 'rgba(63,211,155,.95)' : 'rgba(110,122,145,.75)';
-      g.fillRect(i, mid-v, 1, v*2);
+    if(cols>0){
+      const p=cache.over.p;
+      for(let i=0;i<cols;i++){
+        const x=xs+i;
+        const v=Math.max(0.02,p[i])*(h*0.44);
+        g.fillStyle = (x>=cs && x<ce) ? 'rgba(63,211,155,.95)' : 'rgba(110,122,145,.75)';
+        g.fillRect(x, mid-v, 1, v*2);
+      }
     }
     // 건너뛰기 표시
     S.sent.forEach((sn,i)=>{ if(!isSkip(i)) return;
@@ -2018,8 +2020,11 @@ function paintProgress(t){
     // 가운데 선이 가리키는 문장 강조
     g.fillStyle='rgba(63,211,155,.10)';
     g.fillRect(cs, 0, ce-cs, h);
+    // 가운데 기준선 (미는 동안만 또렷하게)
+    g.strokeStyle= OV.user ? 'rgba(255,255,255,.35)' : 'rgba(255,255,255,.12)'; g.lineWidth=1;
+    g.beginPath(); g.moveTo(Math.round(half)+.5,0); g.lineTo(Math.round(half)+.5,h); g.stroke();
     // 재생 위치 (미는 중에는 감춤)
-    if(!OV.drag && t>=t0 && t<=t1){
+    if(!OV.user && t>=t0 && t<=t1){
       g.strokeStyle='rgba(255,255,255,.75)'; g.lineWidth=1.2;
       g.beginPath(); g.moveTo(X(t),0); g.lineTo(X(t),h); g.stroke();
     }
@@ -2121,54 +2126,120 @@ function resetUI(){
   $('#tStart').textContent=$('#tCur').textContent=$('#tEnd').textContent='00:00:00';
 }
 
-/* 전체 파형 탭 → 그 위치로 이동 */
-/* 상단 파형 — 옆으로 밀어 문장 찾기, 놓으면 가운데 선의 문장으로 이동.
-   빠르게 튕기면 관성이 붙어 더 멀리 간다. */
-(function overviewScroll(){
-  const el=$('#wOver');
-  let x0=0, t0=0, moved=false, samples=[];
-  const midOf=i=>(S.sent[i].s+S.sent[i].e)/2;
-
-  el.addEventListener('pointerdown', e=>{
-    if(S.cur<0 || !S.sent.length) return;
-    el.setPointerCapture(e.pointerId);
-    OV.drag=true; OV.t=midOf(S.si);
-    x0=e.clientX; t0=performance.now(); moved=false;
-    samples=[{x:e.clientX, t:t0}];
-    cache.key='';
-  });
-  el.addEventListener('pointermove', e=>{
-    if(!OV.drag) return;
-    const dx=e.clientX-x0;
-    if(Math.abs(dx)>5) moved=true;
-    OV.t = clamp(midOf(S.si) - dx/el.clientWidth*OV.win, midOf(0), midOf(S.sent.length-1));
-    samples.push({x:e.clientX, t:performance.now()});
-    if(samples.length>6) samples.shift();
-    cache.key='';
-  });
-  const finish = e=>{
-    if(!OV.drag) return;
-    OV.drag=false;
-    if(!moved){                                    // 탭 — 누른 자리의 문장으로
-      const r=el.getBoundingClientRect();
-      const tt = OV.t0 + ((e.clientX-r.left)/r.width)*(OV.t1-OV.t0);
+/* ---------- 상단 파형 스크롤 ----------
+   배율·트랙·스냅을 파일/문장 목록/폭이 바뀔 때만 다시 만들고,
+   S.si 가 바뀌면 파일 휠처럼 부드럽게 가운데로 옮긴다. 손으로 밀어 놓으면
+   브라우저 관성으로 미끄러지다 문장 가운데(스냅)에 서고, 그 문장으로 goto 한다. */
+function ovSync(w, dur, mids){
+  if(!(w>10) || !(dur>0)) return;                    // 아직 배치 전(폭 0)이면 다음 프레임에
+  const sc=$('#ovScroll'), tr=$('#ovTrack'), f=S.files[S.cur];
+  const key = f.id+'|'+S.sent.length+'|'+Math.round(w)+'|'+Math.round((S.sent[0]||{}).s*1000)+'|'+Math.round((S.sent[S.sent.length-1]||{}).e*1000);
+  if(OV.key!==key || OV.sentRef!==S.sent){
+    /* 배율: 각 문장을 가운데 두고 앞뒤 3개가 걸치는 실제 시간 폭의 중간값이 한 화면 */
+    const N=S.sent.length, spans=[];
+    for(let i=0;i<N;i++){
+      let a0=i-3, a1=i+3;
+      if(a0<0){ a1 += -a0; a0=0; }
+      if(a1>N-1){ a0 -= (a1-(N-1)); a1=N-1; }
+      a0=Math.max(0,a0); a1=Math.min(N-1,a1);
+      spans.push(Math.max(3, S.sent[a1].e - S.sent[a0].s));
+    }
+    spans.sort((a,b)=>a-b);
+    const win = spans[Math.floor(spans.length/2)] || 12;
+    OV.pps = w / win;
+    /* 트랙: 파일 길이 + 앞뒤 반 화면씩 (첫·끝 문장도 가운데에 올 수 있게).
+       폭 상한 400만px — 넘치면 트랙을 자르는 게 아니라 배율을 낮춘다 (스냅 위치가 트랙 밖으로 나가면 안 된다) */
+    if(dur*OV.pps + w > 4e6) OV.pps = (4e6 - w)/dur;
+    const trackW = dur*OV.pps + w;
+    tr.style.width = trackW+'px';
+    tr.innerHTML = mids.map(m=>'<i class="ovSnap" style="left:'+(m*OV.pps + w/2 - .5).toFixed(1)+'px"></i>').join('');
+    OV.key=key; OV.sentRef=S.sent; OV.w=w;
+    /* 새로 만들었으니 현재 문장으로 즉시(애니메이션 없이) */
+    OV.prog=true; sc.scrollLeft = mids[S.si]*OV.pps; OV.shown=S.si;
+    ovArmEnd();
+    return;
+  }
+  /* 문장이 바뀌었고 손으로 미는 중이 아니면 부드럽게 따라간다 */
+  if(!OV.user && OV.shown!==S.si){
+    const left = mids[S.si]*OV.pps;
+    OV.shown=S.si;
+    if(Math.abs(sc.scrollLeft-left) > 1){ OV.prog=true; sc.scrollTo({left, behavior:'smooth'}); ovArmEnd(); }
+  }
+}
+/* scrollend 가 없는 브라우저 대비: 마지막 scroll 이벤트 뒤 160ms 를 끝으로 본다 */
+let ovEndT=0;
+function ovArmEnd(){ clearTimeout(ovEndT); ovEndT=setTimeout(ovEnded, 160); }
+function ovEnded(){
+  clearTimeout(ovEndT);
+  if(OV.hold) return;                                // 마우스로 아직 잡고 있으면 끝이 아니다
+  const sc=$('#ovScroll');
+  if(OV.user){
+    OV.user=false;
+    if(S.cur>=0 && S.sent.length && OV.pps>0){
+      const ft = sc.scrollLeft/OV.pps;
       let bi=0,bd=Infinity;
-      for(let i=0;i<S.sent.length;i++){ const d=Math.abs(midOf(i)-tt); if(d<bd){bd=d;bi=i;} }
-      cache.key=''; buzz(10); goto(bi, S.playing, true);
+      for(let i=0;i<S.sent.length;i++){ const d=Math.abs((S.sent[i].s+S.sent[i].e)/2-ft); if(d<bd){bd=d;bi=i;} }
+      const left=(S.sent[bi].s+S.sent[bi].e)/2*OV.pps;
+      if(Math.abs(sc.scrollLeft-left) > 2){          // 스냅이 덜 됐으면(휠 등) 가운데로 마저 옮긴다
+        OV.shown=-1;                                 // 아래 goto/paint 가 부드럽게 옮기도록
+      } else OV.shown=bi;                            // 이미 그 자리 — 다시 옮기지 않는다
+      if(bi!==S.si){ buzz(12); goto(bi, S.playing, true); }
+      else if(OV.shown<0){ cache.key=''; paintAll(); }
+    }
+  }
+  OV.prog=false; cache.key='';
+}
+(function overviewScroll(){
+  const sc=$('#ovScroll');
+  sc.addEventListener('scroll', ()=>{
+    if(!OV.prog) OV.user=true;                       // 프로그램이 옮기는 중이 아니면 사용자 조작
+    cache.key=''; ovArmEnd();
+  }, {passive:true});
+  sc.addEventListener('scrollend', ovEnded);
+  /* 터치는 스크롤이 시작되면 pointercancel 이 와서 pointer 로는 손가락이 붙어 있는지 모른다.
+     touch 이벤트로 잡는다 — 손가락을 멈춘 채 160ms 넘게 들고 있어도 그 자리 문장으로 튀지 않게. */
+  sc.addEventListener('touchstart', ()=>{ OV.hold=true; if(OV.prog) OV.prog=false; }, {passive:true});
+  const touchOff = ()=>{ OV.hold=false; ovArmEnd(); };
+  sc.addEventListener('touchend', touchOff, {passive:true});
+  sc.addEventListener('touchcancel', touchOff, {passive:true});
+
+  /* 탭 → 그 자리의 문장으로. 마우스는 끌어서 밀 수 있게. */
+  let px=0, py=0, pt=0, mouse=false, moved=false, lastX=0;
+  sc.addEventListener('pointerdown', e=>{
+    if(S.cur<0 || !S.sent.length) return;
+    px=e.clientX; py=e.clientY; pt=performance.now(); moved=false; lastX=e.clientX;
+    mouse = e.pointerType==='mouse';
+    if(mouse) OV.hold=true;                          /* 터치의 hold 는 touchstart/touchend 가 관리 — 여기서 풀면 안 된다 */
+    if(mouse){ sc.setPointerCapture(e.pointerId); }
+    /* mandatory 스냅은 scrollLeft 를 직접 바꾸면 그 자리에서 되튕긴다 → 마우스로 끄는 동안만 끈다 */
+    if(mouse) sc.style.scrollSnapType='none';
+    if(OV.prog){ OV.prog=false; }                    // 옮기는 중에 잡으면 사용자에게 넘긴다
+  });
+  sc.addEventListener('pointermove', e=>{
+    if(!mouse || !pt) return;
+    const dx=e.clientX-lastX; lastX=e.clientX;
+    if(Math.abs(e.clientX-px)>5) moved=true;
+    if(moved){ OV.user=true; sc.scrollLeft -= dx; cache.key=''; ovArmEnd(); }
+  });
+  const up = e=>{
+    if(!pt) return;
+    const dt=performance.now()-pt, dist=Math.hypot(e.clientX-px, e.clientY-py);
+    pt=0; OV.hold=false;
+    if(mouse){ sc.style.scrollSnapType=''; }          // 스냅 복구 (탭이든 끌기든 반드시)
+    if(!moved && dt<400 && dist<6){                  // 탭
+      const r=sc.getBoundingClientRect();
+      const tt = (sc.scrollLeft + (e.clientX-r.left) - r.width/2)/OV.pps;
+      let bi=0,bd=Infinity;
+      for(let i=0;i<S.sent.length;i++){ const d=Math.abs((S.sent[i].s+S.sent[i].e)/2-tt); if(d<bd){bd=d;bi=i;} }
+      OV.user=false; cache.key=''; buzz(10);
+      if(bi!==S.si) goto(bi, S.playing, true); else { OV.shown=-1; }   // 같은 문장이면 가운데로만 되돌린다
       return;
     }
-    // 튕긴 속도만큼 더 밀어 준다
-    const last=samples[samples.length-1], first=samples[0];
-    const dt=Math.max(16, last.t-first.t);
-    const v=(last.x-first.x)/dt;                   // px/ms
-    const extra = -v * (OV.win/el.clientWidth) * 260;
-    let target = clamp(OV.t + extra, midOf(0), midOf(S.sent.length-1));
-    let bi=0,bd=Infinity;
-    for(let i=0;i<S.sent.length;i++){ const d=Math.abs(midOf(i)-target); if(d<bd){bd=d;bi=i;} }
-    cache.key=''; buzz(12); goto(bi, S.playing, true);
+    if(mouse && moved){ ovArmEnd(); }                // 마우스 끌기 끝 → 스냅·goto 는 ovEnded 가
   };
-  el.addEventListener('pointerup', finish);
-  el.addEventListener('pointercancel', ()=>{ OV.drag=false; cache.key=''; });
+  sc.addEventListener('pointerup', up);
+  /* 터치는 스크롤이 시작되면 여기로 온다 — 손가락은 아직 붙어 있으니 hold 는 touchend 가 푼다 */
+  sc.addEventListener('pointercancel', ()=>{ pt=0; if(mouse){ OV.hold=false; sc.style.scrollSnapType=''; } });
 })();
 
 /* =========================================================================
@@ -2380,8 +2451,8 @@ window.addEventListener('drop', e=>{ if(e.dataTransfer.files.length) importFiles
 /* ===== 새 버전 알림 =====
    GitHub에 새 index.html 을 올리면, 앱이 알아채고 아래에 알림을 띄운다.
    누르면 캐시를 비우고 새로 받는다. 불러온 음원과 설정은 그대로 남는다. */
-const APP_VERSION = 'v1.6.3';
-const APP_DATE = '2026-08-28';
+const APP_VERSION = 'v1.8.0';
+const APP_DATE = '2026-08-31';
 let verChecked = 0;
 
 async function checkUpdate(){
@@ -2554,7 +2625,8 @@ window.addEventListener('pagehide', flushSaves);
       if(t===4) return '<path d="'+wedge(W*0.40,Y(5),s*2.4, W*0.64,Y(1),s*0.55)+'" fill="'+fill+'"/>';
       if(t===3) return '<path d="'+wedge(W*0.33,Y(2.6),s*1.5, xm,Y(1),s*0.8)+'" fill="'+fill+'"/>'
                      + '<path d="'+wedge(xm,Y(1),s*0.6, W*0.66,Y(3.9),s*1.9)+'" fill="'+fill+'"/>';
-      return '<circle cx="'+(W/2).toFixed(2)+'" cy="'+Y(2.5).toFixed(2)+'" r="'+(s*1.5).toFixed(2)+'" fill="'+fill+'"/>';
+      if(t===5) return '<circle cx="'+(W/2).toFixed(2)+'" cy="'+Y(2.5).toFixed(2)+'" r="'+(s*1.5).toFixed(2)+'" fill="'+fill+'"/>';
+      return '';   /* 성조 미상(병음 정렬 실패·병음 없음) — 경성 점으로 보이면 오독하므로 비운다 */
     }
     let inner = '';
     if(LN.grid){
@@ -2660,7 +2732,15 @@ window.addEventListener('pagehide', flushSaves);
        한자 열에 단어 위치를 맞추지 않는다 — 자주 겹치기 때문. 줄 전체를
        하나의 자연스러운 글줄로 두고 각 단어가 원래 폭대로 흘러가게 한다.
        (프로젝트 원칙: 성조·병음 셀 너비를 서로 연동하지 말 것) */
+    /* 정렬에 실패한 병음·독음(text 에만 있고 음절에는 없음): 뜻 줄로 보내지 않고
+       제 줄에 한 덩어리로 보여준다. 접힘 모드에서는 첫 구간에만 싣는다. */
+    const plainOf = k => (k==='pinyin'||k==='pron') && (ln.text && ln.text[k]) && !sy.some(y=>y[k]) ? ln.text[k] : null;
     const rowTds = (k,g,first)=>{
+      const plain = plainOf(k);
+      if(plain !== null){
+        return '<td colspan="'+spanOf(g)+'" style="text-align:left">'
+          + '<span class="'+(k==='pinyin'?'py':'kr')+'">'+esc(first?plain:'')+'</span></td>';
+      }
       if(hasWS && (k==='pinyin'||k==='pron')){
         const words=[]; let w=null;
         g.forEach((y,j)=>{ if(!w || y.ws){ w={j0:j, ys:[]}; words.push(w); } w.ys.push(y); });
@@ -2740,7 +2820,9 @@ window.addEventListener('pagehide', flushSaves);
     };
 
     wrap.innerHTML = buildOne();
-    if(segs.length > 1){
+    /* 정렬 안 된 병음·독음이 한 덩어리로 있으면 접어도 첫 구간에 통째로 실려 넘치므로 접지 않는다 */
+    const hasPlain = plainOf('pinyin') !== null || plainOf('pron') !== null;
+    if(segs.length > 1 && !hasPlain){
       const fl = document.getElementById('lflow');
       if(fl.scrollWidth > fl.clientWidth + 1) wrap.innerHTML = buildFold();
     }
@@ -3117,12 +3199,27 @@ window.addEventListener('pagehide', flushSaves);
 
   /* 자막 구간 → 문장 경계. 겹치면 뒤로 밀고, 파일 길이를 넘지 않게 자른다.
      대본도 같은 목록에서 만들어야 문장 번호와 대본이 어긋나지 않는다. */
+  /* 자막 시각은 '글자가 떠 있는 시간'이라 말끝 여운이 끝나기 전에 꺼진다.
+     yufa_01-01 실측: 24문장 중 22문장이 끝쪽에서 0.02~0.33초 잘림, 앞쪽 여유 0~0.1초.
+     그래서 재생 경계는 자막보다 앞 PAD_HEAD·뒤 PAD_TAIL 만큼 넉넉히 잡는다.
+     단, 옆 자막과의 간격의 절반을 넘지는 않는다 — 앞 문장 꼬리가 다음 문장에 섞이면 안 된다. */
+  const PAD_HEAD = 0.25, PAD_TAIL = 0.45;
+  const MIN_CUE = 0.15;                        /* 이보다 짧은 자막은 쓰레기로 본다 */
   function cueSpans(cues, dur){
     const lim = dur > 0 ? dur : Infinity, out = [];
-    for(const c of cues){
-      let a = Math.max(0, c.s), b = Math.min(lim, c.e);
+    /* 쓰레기 자막(길이 0.15초 미만)은 여유를 덧대기 전에 걸러낸다 — 이웃 간격 계산에도 끼지 않게 */
+    const cs = (cues || []).filter(c => c && c.e - c.s >= MIN_CUE);
+    const n = cs.length;
+    for(let i = 0; i < n; i++){
+      const c = cs[i];
+      const gapPrev = i > 0     ? c.s - cs[i - 1].e : Infinity;   /* 음수 = 겹침 */
+      const gapNext = i < n - 1 ? cs[i + 1].s - c.e : Infinity;
+      const head = Math.max(0, Math.min(PAD_HEAD, gapPrev / 2));
+      const tail = Math.max(0, Math.min(PAD_TAIL, gapNext / 2));
+      let a = Math.max(0, c.s - head), b = Math.min(lim, c.e + tail);
       if(out.length && a < out[out.length - 1].e) a = out[out.length - 1].e;
-      if(b - a < 0.15) continue;
+      if(a >= c.e) continue;                    /* 앞 자막이 이 자막을 통째로 덮음 (같은 시각 중복) */
+      if(b - a < MIN_CUE) continue;
       out.push({ s: a, e: b, cue: c });
     }
     return out;
@@ -3136,6 +3233,8 @@ window.addEventListener('pagehide', flushSaves);
      srt 한 덩어리 = 문장 하나. 병음 줄과 한자 줄이 음절 수까지 맞으면
      팩과 똑같은 syllables 구조로 만들어, 성조·병음·한자가 세로로 정렬된다.
      맞지 않거나 한자가 없으면 억지로 붙이지 않고 있는 것만 보여준다. */
+  /* 단어·어절 경계: 공백과 문장부호. 병음 줄과 독음 줄을 같은 규칙으로 세어야 어절 수가 맞는다 */
+  const SEP_RE = /[\s,，.。、!?！？;；:：]+/;
   const PY_TONE = (() => {
     const m = {}, sets = [['a','āáǎà'],['o','ōóǒò'],['e','ēéěè'],
                           ['i','īíǐì'],['u','ūúǔù'],['v','ǖǘǚǜ']];
@@ -3157,7 +3256,7 @@ window.addEventListener('pagehide', flushSaves);
   function splitPinyin(line){
     const out = [];
     /* 공백 = 단어 경계(파일 표기 그대로 ws 에 보존) / 아포스트로피 = 음절 경계일 뿐 (Xī'ān) */
-    for(const chunk of String(line||'').split(/\s+/)){
+    for(const chunk of String(line||'').split(SEP_RE)){          /* 공백·구두점 = 단어 경계 */
       let wordStart = true;                     /* 이 청크에서 처음 내보내는 음절에 ws */
       const mark = o => { if(wordStart){ o.ws = 1; wordStart = false; } return o; };
     for(const w of chunk.split(/['\u2019]/)){
@@ -3200,23 +3299,30 @@ window.addEventListener('pagehide', flushSaves);
     const alt=[];
     for(const y of list){
       const m = /^(.+)r$/i.exec(y.py||'');
-      if(m) { const h={ py:m[1], tone:y.tone }; if(y.ws) h.ws=1;
+      if(m) { const h={ py:m[1], tone:y.tone }; if(y.ws) h.ws=1; if(y.bad) h.bad=true;   /* 못 읽힌 덩어리는 쪼개도 못 읽힌 것 */
               alt.push(h); alt.push({ py:'r', tone:5 }); }
       else alt.push(y);
     }
     return alt.length === n ? alt : list;
   }
   const isHan = ch => ch >= '\u4e00' && ch <= '\u9fff';
+  const isDigit = ch => ch >= '0' && ch <= '9';
+  /* 한자 줄의 '칸' — 한자 한 글자, 또는 아라비아 숫자 한 자리(숫자 읽기 단원: 119 = yāo yāo jiǔ).
+     수량 읽기(608 = 六百零八)는 자리 수와 음절 수가 달라 정렬이 안 되지만, 그래도 줄은 갈라져 나온다. */
+  const isLatin = ch => /[A-Za-z]/.test(ch);
+  const isCell = ch => isHan(ch) || isDigit(ch) || isLatin(ch);   /* 한자 줄 안의 T恤·KTV·3D 도 한 글자 = 칸 */
   function lineKind(t){
     if(/[\u3040-\u30ff]/.test(t)) return 'other';        /* 일본어 가나 — 쪼개지 않는다 */
-    let han=0, kor=0, lat=0;
+    let han=0, kor=0, lat=0, dig=0;
     for(const ch of t){
       if(isHan(ch)) han++;
+      else if(isDigit(ch)) dig++;
       else if(ch >= '\uac00' && ch <= '\ud7a3') kor++;
       else if(/[a-zA-Z]/.test(ch) || PY_TONE[ch]) lat++;
     }
-    if(han && han>=kor && han>=lat) return 'hanzi';
-    if(lat && lat>=han && lat>=kor) return 'latin';
+    if(kor && !han) return 'kor';                          /* '418호 방' — 숫자가 섞인 한글 줄 */
+    if((han || dig) && han+dig>=kor && han+dig>=lat) return 'hanzi';   /* '608', '418房间', '2001年' */
+    if(lat && lat>=han+dig && lat>=kor) return 'latin';
     if(kor) return 'kor';
     return 'other';
   }
@@ -3234,20 +3340,35 @@ window.addEventListener('pagehide', flushSaves);
     const syl = [];
     if(hz){
       let pre = '';                              /* 첫 한자 앞에 오는 여는 구두점 */
-      for(const ch of hz){
-        if(isHan(ch)){ syl.push({ hanzi:ch, pinyin:'', pron:'', tone:0 }); 
+      const hzc = [...hz];
+      for(let ci = 0; ci < hzc.length; ci++){
+        const ch = hzc[ci];
+        /* 소수점(20.7 의 '.')은 点 한 음절로 읽히므로 칸이다 — 숫자 사이에 있을 때만 */
+        const decPt = ch === '.' && ci > 0 && ci < hzc.length - 1 && isDigit(hzc[ci-1]) && isDigit(hzc[ci+1]);
+        if(isCell(ch) || decPt){ syl.push({ hanzi:ch, pinyin:'', pron:'', tone:0, lat:isLatin(ch)||undefined }); 
           if(pre){ syl[syl.length-1].pre = pre; pre=''; } }
         else if(ch.trim()){
           if(syl.length) syl[syl.length-1].punct = (syl[syl.length-1].punct||'') + ch;
           else pre += ch;
         }
       }
-      /* 병음은 한자와 음절 수가 맞을 때만 태운다 */
+      /* 병음은 한자와 음절 수가 맞을 때만 음절에 태운다.
+         못 맞추면 정렬만 포기하고 병음 줄에 한 덩어리로 보여준다(text.pinyin) — 뜻 줄로 내려보내지 않는다. */
       if(py){
-        const ps = alignPinyin(splitPinyin(py), syl.length);
-        if(ps.length === syl.length && !ps.some(x=>x.bad))
+        /* 병음 줄의 'T'·'KTV' 처럼 병음으로 안 읽히는 라틴 덩어리는 글자 하나씩 떼어 한자 줄의
+           라틴 칸(T恤의 T)과 글자 그대로 맞춘다. 그 외의 bad 는 진짜 병음이 아닌 줄이다. */
+        const ps0 = splitPinyin(py).flatMap(x =>
+          (x.bad && /^[A-Za-z]+$/.test(x.py)) ? [...x.py].map((ch,i)=>({ py:ch, tone:0, latc:true, ws:(i===0&&x.ws)?1:undefined })) : [x]);
+        const ps = alignPinyin(ps0, syl.length);
+        const fits = ps.length === syl.length &&
+          ps.every((x,i)=> !x.bad && (!x.latc || (syl[i].lat && x.py.toLowerCase() === syl[i].hanzi.toLowerCase())));
+        if(fits)
           ps.forEach((x,i)=>{ syl[i].pinyin = x.py; syl[i].tone = x.tone; if(x.ws) syl[i].ws = 1; });
-        else rest.unshift({ t:py, k:'latin' });   /* 못 맞추면 글자 줄로 내려보낸다 */
+        else if(ps0.some(x=>x.bad || x.latc) || !syl.length){   /* 라틴 덩어리가 칸과 안 맞으면 그 줄은 병음이 아니다(영어 문장 등) */
+          /* 병음으로 읽히지 않는 라틴 줄(영어 번역 등)이거나 칸이 없다 → 병음 줄이 아니다. 뜻 줄로. */
+          text.pinyin = ''; rest.unshift({ t:py, k:'latin' });
+        }
+        /* 그 외(전부 병음 음절인데 수만 안 맞음)는 text.pinyin 에 남아 병음 줄에 한 덩어리로 표시된다 */
       }
     } else if(py) rest.unshift({ t:py, k:'latin' });
 
@@ -3258,18 +3379,27 @@ window.addEventListener('pagehide', flushSaves);
     const korAt = rest.map((x,i)=> x.k==='kor' ? i : -1).filter(i=>i>=0);
     let pronAt = -1;
     if(syl.length && korAt.length){
-      const cand = korAt[0], toks = rest[cand].t.split(/\s+/).filter(Boolean);
-      const enough = korAt.length >= 2 || syl.length >= 6;
+      const cand = korAt[0];
+      /* 어절은 공백뿐 아니라 쉼표·마침표에서도 끊는다 — '러,진톈' 처럼 공백이 빠진 표기 대응 */
+      const toks = rest[cand].t.split(SEP_RE).filter(Boolean);
       /* 단어 시작 인덱스 (병음 띄어쓰기에서 온 ws) — 독음이 단어 단위로 적힌 파일 대응 */
       const wIdx = syl.map((y,i)=> (i===0 || y.ws) ? i : -1).filter(i=>i>=0);
       const hasW = syl.some(y=>y.ws);
-      if(enough && toks.length === syl.length){
+      const bySyl  = toks.length === syl.length;
+      const byWord = hasW && toks.length === wIdx.length;
+      /* 줄 배치와 음절 정렬은 별개다.
+         · 한글 줄이 둘이면 앞 줄은 무조건 독음(대본 관례) — 어절이 안 맞아도 줄은 지키고 정렬만 포기한다.
+         · 한글 줄이 하나면 보통 번역이다. 6음절 이상이면서 어절 수가 딱 맞을 때만 독음으로 본다
+           (3음절 문장의 세 어절 번역이 독음 자리를 뺏던 v1.1.1 버그 방지). */
+      /* 한글 줄 뒤에 줄이 더 있으면(한글이든, '20.7' 같은 숫자 번역이든) 그 한글 줄은 독음이다.
+         뒤가 라틴(영어 번역)뿐이면 해당 없음 — 영어·한글 둘 다 번역인 파일. */
+      const positional = korAt.length >= 2 ||
+        rest.some((x,i)=> i > cand && x.k !== 'latin');
+      const aligned = bySyl || byWord;
+      if(positional || (syl.length >= 6 && aligned)){
         pronAt = cand; text.pron = rest[cand].t;
-        toks.forEach((w,i)=>{ syl[i].pron = w; });
-      } else if(enough && hasW && toks.length === wIdx.length){
-        /* 어절 수 = 단어 수: 각 어절을 단어 첫 음절에 싣는다 (표시가 단어 병합이라 그대로 맞음) */
-        pronAt = cand; text.pron = rest[cand].t;
-        toks.forEach((w,i)=>{ syl[wIdx[i]].pron = w; });
+        if(bySyl)       toks.forEach((w,i)=>{ syl[i].pron = w; });
+        else if(byWord) toks.forEach((w,i)=>{ syl[wIdx[i]].pron = w; });   /* 각 어절을 단어 첫 음절에 */
       }
     }
     text.trans = rest.filter((x,i)=> i !== pronAt).map(x=>x.t).join(' ').trim();
