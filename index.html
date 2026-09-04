@@ -347,6 +347,20 @@
     -webkit-user-select:none;-webkit-touch-callout:none}
   .lcard.drag .lgrip{cursor:grabbing;color:var(--ink)}
   .lchint{color:var(--dim);font-size:12.5px;padding:6px 4px 10px}
+  /* 학습 모드 */
+  #segMode{display:flex;gap:8px;padding:2px 0 10px}
+  #segMode button{flex:1 1 0;justify-content:center;padding:11px 8px;font-size:14px;color:var(--ink);
+    background:var(--panel);border:1px solid var(--line);border-radius:12px;cursor:pointer}
+  #segMode button.on{border-color:var(--acc);color:var(--acc);background:rgba(61,201,160,.08)}
+  #modeInfo{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin-bottom:4px}
+  .mrow{display:flex;align-items:center;gap:10px;min-height:26px}
+  .mrow+.mrow{margin-top:2px}
+  .mlab{flex:0 0 76px;color:var(--dim);font-size:12px;white-space:nowrap}
+  .mval{flex:1 1 auto;white-space:nowrap;overflow:hidden}
+  .mrow.moff{opacity:.32}
+  .mrow.moff .mlab::after{content:' (꺼짐)'}
+  #modeDesc{color:var(--dim);font-size:13px;line-height:1.55;margin-top:10px;
+    border-top:1px solid var(--line);padding-top:10px}
   /* 성조 파형 카드 — 다섯 줄 카드와 같은 생김새지만 순서 변경 대상이 아니다(손잡이 없음) */
   #rhyCard{margin:2px 0 4px}
   #rhyCard .lprev svg{display:block;width:150px;height:34px}
@@ -503,6 +517,17 @@
     <h2>설정</h2><div style="width:44px"></div>
   </div>
   <div class="sbody">
+    <div class="grp">학습 모드</div>
+    <div id="segMode">
+      <button data-m="beginner">초급</button>
+      <button data-m="shadow">섀도잉</button>
+      <button data-m="custom">커스텀</button>
+    </div>
+    <div id="modeInfo">
+      <div id="modePrev"></div>
+      <div id="modeDesc"></div>
+    </div>
+
     <div class="grp">성조 파형</div>
     <div class="lcard" id="rhyCard">
       <button class="cb2 lvis on" id="rhyCb" aria-label="성조 파형 항상 보기"></button>
@@ -2475,8 +2500,8 @@ window.addEventListener('drop', e=>{ if(e.dataTransfer.files.length) importFiles
 /* ===== 새 버전 알림 =====
    GitHub에 새 index.html 을 올리면, 앱이 알아채고 아래에 알림을 띄운다.
    누르면 캐시를 비우고 새로 받는다. 불러온 음원과 설정은 그대로 남는다. */
-const APP_VERSION = 'v1.10.0';
-const APP_DATE = '2026-09-02';
+const APP_VERSION = 'v1.11.0';
+const APP_DATE = '2026-09-04';
 let verChecked = 0;
 
 async function checkUpdate(){
@@ -2569,7 +2594,7 @@ window.addEventListener('pagehide', flushSaves);
   /* ---------- 상태 ----------
      줄마다 크기가 따로다(최대치도 다르다). 순서도 사용자가 바꾼다 —
      학습자에 따라 먼저 보고 싶은 줄이 다르기 때문. 메인 화면이 이 순서를 그대로 쓴다. */
-  const LK = 'ongal_lines_v2';
+  const LK = 'ongal_lines_v3';
   const ROWS  = ['tone','pinyin','hanzi','pron','trans'];
   const MAXSZ = { tone:2, pinyin:2, hanzi:3, pron:3, trans:3 };
   const DEFAULT_LN = () => ({
@@ -2579,6 +2604,19 @@ window.addEventListener('pagehide', flushSaves);
     vis:{tone:1,pinyin:1,hanzi:1,pron:1,trans:1},    /* 👁 항상 보기 — 끄면 메인에서 자리째 사라짐 */
     grid:0, sandhi:1 });
   const LN = DEFAULT_LN();
+
+  /* ---------- 학습 모드 ----------
+     모드가 정하는 것은 「줄 순서」와 「선택 시 시작 표시값」뿐이다.
+     눈·체크박스·크기는 세 모드 모두 학습자의 것 — 크기는 저시력 배려라 절대 잠그지 않는다.
+     초급·섀도잉은 순서 잠금(⠿ 없음), 커스텀만 순서 변경 가능.
+     mode/custom 은 DEFAULT_LN 밖 — 「기본값으로」가 모드를 건드리면 안 된다. */
+  const MODE_KEYS = ['beginner','shadow','custom'];
+  const MODES = {
+    beginner:{ order:['trans','pron','pinyin','hanzi','tone'], visOff:[] },
+    shadow:  { order:['tone','pinyin','hanzi','pron','trans'], visOff:['trans','pron'] }
+  };
+  LN.mode = 'beginner';
+  LN.custom = null;                            /* 커스텀을 떠날 때의 순서·표시 스냅샷 */
 
   /* 저장값이 깨져 있어도(문자열 크기, 없는 줄 이름, 상한 초과) 기본값으로 살아난다.
      정규화 없이 두면 렌더에서 던지고, updateMeta 훅의 catch가 삼켜서
@@ -2600,21 +2638,34 @@ window.addEventListener('pagehide', flushSaves);
       LN.vis[k]  = LN.vis[k]===0 ? 0 : 1;
     }
     LN.grid = LN.grid?1:0; LN.sandhi = LN.sandhi?1:0;
-    LN.rhy = LN.rhy===0 ? 0 : 1;               /* 성조 파형(3번째 칸) — DEFAULT_LN 밖: 「기본값으로」의 대상이 아니다 */
+    LN.rhy = LN.rhy===0 ? 0 : 1;
+    /* 모드 — 저장값이 오염돼도 초급으로 폴백, 잠금 모드는 순서를 항상 강제 */
+    if(!MODE_KEYS.includes(LN.mode)) LN.mode = 'beginner';
+    if(LN.mode !== 'custom') LN.order = MODES[LN.mode].order.slice();
+    if(LN.custom && (typeof LN.custom!=='object' || !Array.isArray(LN.custom.order))) LN.custom = null;               /* 성조 파형(3번째 칸) — DEFAULT_LN 밖: 「기본값으로」의 대상이 아니다 */
   }
   try{
     const raw = localStorage.getItem(LK);
     if(raw){ Object.assign(LN, JSON.parse(raw) || {}); }
-    else{                                     /* v1 저장값 이월 */
-      const old1 = JSON.parse(localStorage.getItem('ongal_lines_v1')||'null');
-      if(old1 && typeof old1==='object'){
-        if(old1.show && typeof old1.show==='object') LN.show = Object.assign({}, LN.show, old1.show);
-        LN.grid = old1.grid?1:0; LN.sandhi = old1.sandhi===0?0:1;
+    else{
+      const old2 = JSON.parse(localStorage.getItem('ongal_lines_v2')||'null');
+      if(old2 && typeof old2==='object'){
+        /* v2 사용자 이월 — 업그레이드로 화면이 갑자기 바뀌면 안 되므로,
+           쓰던 구성을 그대로 「커스텀」으로 넘긴다. 새 설치만 초급으로 시작. */
+        Object.assign(LN, old2);
+        LN.mode = 'custom';
+      } else {                                 /* v1 저장값 이월 */
+        const old1 = JSON.parse(localStorage.getItem('ongal_lines_v1')||'null');
+        if(old1 && typeof old1==='object'){
+          if(old1.show && typeof old1.show==='object') LN.show = Object.assign({}, LN.show, old1.show);
+          LN.grid = old1.grid?1:0; LN.sandhi = old1.sandhi===0?0:1;
+        }
       }
     }
   }catch(e){}
   normalize();
   const lsave = ()=>{ try{ localStorage.setItem(LK, JSON.stringify(LN)); }catch(e){} };
+  lsave();   /* 정규화·마이그레이션 결과를 즉시 굳힌다 — 오염값이 저장소에 남아 있지 않게 */
 
   /* ---------- 크기 체계 ----------
      레벨 1이 기존 기본 화면과 같은 크기. 레벨이 오를수록 그 줄만 커진다.
@@ -3037,7 +3088,8 @@ window.addEventListener('pagehide', flushSaves);
         +   '<b>'+sz+'<i>/'+mx+'</i></b>'
         +   '<button data-sz="'+k+'" data-d="1"'+(sz>=mx?' disabled':'')+'>+</button>'
         + '</div>'
-        + '<span class="lgrip" aria-label="끌어서 순서 변경">⠿</span></div>';
+        + (LN.mode==='custom' ? '<span class="lgrip" aria-label="끌어서 순서 변경">⠿</span>' : '')
+        + '</div>';
     }).join('');
   }
 
@@ -3064,7 +3116,7 @@ window.addEventListener('pagehide', flushSaves);
   document.getElementById('lcards').addEventListener('click', e=>{
     const lv2 = e.target.closest('[data-lv]');
     if(lv2){ LN.vis[lv2.dataset.lv] = LN.vis[lv2.dataset.lv]===0 ? 1 : 0;
-             lsave(); renderCards(); renderLines(); return; }
+             lsave(); renderCards(); renderLines(); renderModeUI(); return; }
     const cb = e.target.closest('[data-lk]');
     if(cb){ LN.show[cb.dataset.lk] = LN.show[cb.dataset.lk] ? 0 : 1;
             lsave(); renderCards(); renderLines(); return; }
@@ -3075,6 +3127,58 @@ window.addEventListener('pagehide', flushSaves);
     if(sz){ const k = sz.dataset.sz;
             LN.size[k] = Math.min(MAXSZ[k], Math.max(1, lv(k) + (+sz.dataset.d)));
             lsave(); renderCards(); renderLines(); }
+  });
+
+  /* ---------- 설정: 학습 모드 카드 ----------
+     미리보기는 你好 고정 견본 — 메인 화면의 파일·문장과 무관하다.
+     모드 버튼 = 즉시 적용. 커스텀을 떠날 때 순서·표시를 스냅샷해 두고 돌아오면 복원. */
+  const NIHAO = { text:{trans:'안녕하세요'}, syllables:[
+    {hanzi:'你',pinyin:'nǐ',pron:'니',tone:3,toneReal:2},
+    {hanzi:'好',pinyin:'hǎo',pron:'하오',tone:3}]};
+  const MLAB = { tone:'성조', pinyin:'병음', hanzi:'한자', pron:'독음', trans:'뜻' };
+  const MDESC = {
+    beginner:'뜻을 먼저 이해하고 독음 \u2192 병음 \u2192 한자 순서로 소리와 글자를 익힙니다. 줄 순서는 고정입니다. \uD83D\uDC41 눈과 \u2713 체크박스로 줄을 가리고 열며 연습하세요.',
+    shadow:'뜻과 독음은 꺼진 채 시작합니다. 소리를 듣고 따라 말한 뒤, 필요할 때 \uD83D\uDC41 눈으로 켜서 확인하세요. 줄 순서는 고정입니다.',
+    custom:'줄 순서\u00B7크기\u00B7표시를 직접 구성합니다. 카드 오른쪽 \u28FF 를 끌어 순서를 바꾸세요.' };
+
+  function renderModeUI(){
+    const seg = document.getElementById('segMode');
+    if(!seg) return;
+    seg.querySelectorAll('button').forEach(b=> b.classList.toggle('on', b.dataset.m===LN.mode));
+    document.getElementById('modePrev').innerHTML = LN.order.map(k=>{
+      const isOff = LN.vis[k]===0;             /* 지금 실제로 꺼져 있는 줄 — 견본이 거짓말하지 않게 */
+      return '<div class="mrow'+(isOff?' moff':'')+'"><span class="mlab">'+MLAB[k]+'</span>'
+           + '<span class="mval">'+previewHTML(k, NIHAO)+'</span></div>';
+    }).join('');
+    document.getElementById('modeDesc').textContent = MDESC[LN.mode];
+    const hint = document.querySelector('.lchint');
+    if(hint) hint.textContent = LN.mode==='custom'
+      ? '\u28FF 를 끌어 순서 변경 \u2014 메인 화면의 줄 순서도 같이 바뀝니다'
+      : '이 모드에서는 줄 순서가 고정됩니다 \u2014 \uD83D\uDC41\u00B7\u2713\u00B7크기는 조절할 수 있습니다';
+  }
+
+  function setMode(m){
+    if(!MODE_KEYS.includes(m) || m===LN.mode){ renderModeUI(); return; }
+    if(LN.mode==='custom')                     /* 커스텀을 떠남 — 애써 만든 구성을 보존 */
+      LN.custom = { order:LN.order.slice(),
+                    vis:Object.assign({},LN.vis), show:Object.assign({},LN.show) };
+    LN.mode = m;
+    if(m==='custom'){
+      if(LN.custom){
+        LN.order = LN.custom.order.slice();
+        Object.assign(LN.vis,  LN.custom.vis || {});
+        Object.assign(LN.show, LN.custom.show || {});
+      }
+    } else {                                   /* 시작 표시값 — 선택 순간에만 적용 */
+      for(const k of ROWS){ LN.vis[k]=1; LN.show[k]=1; }
+      for(const k of MODES[m].visOff) LN.vis[k]=0;
+    }
+    normalize(); lsave();
+    renderCards(); renderLines(); renderModeUI();
+    toast(m==='beginner' ? '초급 모드' : m==='shadow' ? '섀도잉 모드' : '커스텀 모드');
+  }
+  document.getElementById('segMode').addEventListener('click', e=>{
+    const b = e.target.closest('[data-m]'); if(b) setMode(b.dataset.m);
   });
 
   document.getElementById('bLdefault').onclick = ()=>{
@@ -3131,6 +3235,7 @@ window.addEventListener('pagehide', flushSaves);
       others=list.filter(el=>el!==card).map(el=>({el, idx:list.indexOf(el)}));
     }
     box.addEventListener('pointerdown', e=>{
+      if(LN.mode !== 'custom') return;         /* 초급·섀도잉 — 순서 잠금 (⠿·길게누름 모두) */
       const c = e.target.closest('.lcard');
       if(!c || e.target.closest('button')) return;
       card=c; startY=e.clientY; pid=e.pointerId;
@@ -3844,7 +3949,7 @@ window.addEventListener('pagehide', flushSaves);
   };
 
   /* ---------- 시작 ---------- */
-  renderCards(); renderLines();
+  renderCards(); renderLines(); renderModeUI();
   addEventListener('resize', renderLines);
 })();
 
