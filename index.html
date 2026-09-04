@@ -304,9 +304,10 @@
     border-radius:6px;border:1.4px solid var(--dim);
     background:transparent;color:var(--dim);display:grid;place-items:center;
     font-size:11px;line-height:1;cursor:pointer;padding:0}
+  .cb2:disabled{opacity:.32;border-color:var(--dim2);color:var(--dim2);cursor:default}
   .cb2:focus-visible{outline:2px solid var(--green);outline-offset:2px}
   .cb2 span{opacity:0}
-  .cb2.on{border-color:var(--dim);color:var(--ink)}
+  .cb2.on{border-color:var(--dim);color:var(--green)}   /* 켜짐 = 안의 아이콘(눈·✓) 녹색 */
   .cb2.on span{opacity:1}
   .cb2.lvis svg{width:14px;height:14px;display:block}
   #noLines{color:var(--dim2);font-size:13px;padding:16px 12px;text-align:center;line-height:1.7}
@@ -333,11 +334,14 @@
   .ltog{flex:0 0 auto;font-size:11.5px;padding:5px 7px;border-radius:8px;
     border:1px solid var(--line);color:var(--dim);background:transparent;line-height:1}
   .ltog.on{border-color:var(--green);color:var(--green)}
+  .lcard>.cb2{width:26px;height:26px;font-size:13px}
+  .lcard>.cb2+.cb2{margin-left:2px}
+  .lcard>.cb2.lvis svg{width:17px;height:17px}
   .lsz{flex:0 0 auto;display:flex;align-items:center;gap:1px}
-  .lsz button{width:30px;height:30px;flex:0 0 auto;border-radius:8px;border:0;background:transparent;
+  .lsz button{width:26px;height:30px;flex:0 0 auto;border-radius:8px;border:0;background:transparent;
     color:var(--ink);font-size:19px;line-height:1;padding:0}
   .lsz button:disabled{color:var(--dim2)}
-  .lsz b{flex:0 0 auto;font-variant-numeric:tabular-nums;font-size:14px;min-width:30px;text-align:center;font-weight:600}
+  .lsz b{flex:0 0 auto;font-variant-numeric:tabular-nums;font-size:14px;min-width:24px;text-align:center;font-weight:600}
   .lsz b i{color:var(--dim);font-style:normal;font-size:12px}
   /* 끌기 손잡이 — 여기만 touch-action:none. 터치에서 카드 본문은 pan-y 라
      세로로 끌면 브라우저가 스크롤로 가져가며 드래그를 강제 취소(pointercancel)한다.
@@ -351,7 +355,7 @@
   #segMode{display:flex;gap:8px;padding:2px 0 10px}
   #segMode button{flex:1 1 0;justify-content:center;padding:11px 8px;font-size:14px;color:var(--ink);
     background:var(--panel);border:1px solid var(--line);border-radius:12px;cursor:pointer}
-  #segMode button.on{border-color:var(--acc);color:var(--acc);background:rgba(61,201,160,.08)}
+  #segMode button.on{border-color:var(--green);background:var(--green);color:#0d1117;font-weight:700}
   #modeInfo{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin-bottom:4px}
   .mrow{display:flex;align-items:center;gap:10px;min-height:26px}
   .mrow+.mrow{margin-top:2px}
@@ -395,6 +399,8 @@
     #lrow{gap:8px;padding:7px 8px}
     #lcol{flex:0 0 19px}
     .cb2{width:19px;height:19px;font-size:10px}
+    .lcard>.cb2{width:23px;height:23px;font-size:12px}
+    .lcard>.cb2.lvis svg{width:15px;height:15px}
     #lflow{column-gap:15px;row-gap:8px}
     #stage{min-height:clamp(96px,13vh,140px)}
     #next{width:110px;height:110px;font-size:17px}
@@ -531,12 +537,10 @@
     <div class="grp">성조 파형</div>
     <div class="lcard" id="rhyCard">
       <button class="cb2 lvis on" id="rhyCb" aria-label="성조 파형 항상 보기"></button>
-      <div class="lprev" id="rhyPrev"><svg viewBox="0 0 150 34" fill="none" stroke="var(--ink)" stroke-width="2.4" stroke-linecap="round">
-        <path d="M6 12 Q13 26 22 10"/>
-        <path d="M34 9 H52"/>
-        <path d="M64 24 Q70 27 76 23"/>
-        <path d="M88 25 L102 8"/>
-        <path d="M114 9 L130 27"/>
+      <div class="lprev" id="rhyPrev"><svg viewBox="0 0 150 34" fill="none" stroke="var(--green)" stroke-width="2.6" stroke-linecap="round">
+        <path d="M5 24 C14 26.5 22 25 32 18 C42 11 52 9 64 8.5"/>
+        <path d="M80 11 C92 12.5 102 18 114 22.5 C120 24.5 126 25 131 25"/>
+        <path d="M135 27 C139 29 143 30.5 146 31.5" stroke-width="2" opacity=".75"/>
       </svg></div>
     </div>
     <div class="grp">대본 5줄</div>
@@ -588,6 +592,7 @@
       <div class="opt"><div class="lbl">저장 상태<div class="hint" id="stoTxt">확인 중…</div></div></div>
       <div class="opt"><div class="lbl">전체 지우기<div class="hint">불러온 파일과 분석 결과를 모두 삭제합니다</div></div>
         <button class="seg" style="padding:8px 14px;color:var(--danger)" id="bWipe">지우기</button></div>
+      <div class="opt"><div class="lbl">만든 사람<div class="hint">vetzzang</div></div></div>
     </div>
     <div style="height:30px"></div>
   </div>
@@ -2500,7 +2505,7 @@ window.addEventListener('drop', e=>{ if(e.dataTransfer.files.length) importFiles
 /* ===== 새 버전 알림 =====
    GitHub에 새 index.html 을 올리면, 앱이 알아채고 아래에 알림을 띄운다.
    누르면 캐시를 비우고 새로 받는다. 불러온 음원과 설정은 그대로 남는다. */
-const APP_VERSION = 'v1.11.0';
+const APP_VERSION = 'v1.11.7';
 const APP_DATE = '2026-09-04';
 let verChecked = 0;
 
@@ -2612,7 +2617,7 @@ window.addEventListener('pagehide', flushSaves);
      mode/custom 은 DEFAULT_LN 밖 — 「기본값으로」가 모드를 건드리면 안 된다. */
   const MODE_KEYS = ['beginner','shadow','custom'];
   const MODES = {
-    beginner:{ order:['trans','pron','pinyin','hanzi','tone'], visOff:[] },
+    beginner:{ order:['trans','pron','pinyin','hanzi','tone'], visOff:['hanzi','tone'] },
     shadow:  { order:['tone','pinyin','hanzi','pron','trans'], visOff:['trans','pron'] }
   };
   LN.mode = 'beginner';
@@ -2644,6 +2649,7 @@ window.addEventListener('pagehide', flushSaves);
     if(LN.mode !== 'custom') LN.order = MODES[LN.mode].order.slice();
     if(LN.custom && (typeof LN.custom!=='object' || !Array.isArray(LN.custom.order))) LN.custom = null;               /* 성조 파형(3번째 칸) — DEFAULT_LN 밖: 「기본값으로」의 대상이 아니다 */
   }
+  let freshInstall = false;
   try{
     const raw = localStorage.getItem(LK);
     if(raw){ Object.assign(LN, JSON.parse(raw) || {}); }
@@ -2659,10 +2665,12 @@ window.addEventListener('pagehide', flushSaves);
         if(old1 && typeof old1==='object'){
           if(old1.show && typeof old1.show==='object') LN.show = Object.assign({}, LN.show, old1.show);
           LN.grid = old1.grid?1:0; LN.sandhi = old1.sandhi===0?0:1;
-        }
+        } else freshInstall = true;              /* 저장값이 전혀 없음 — 진짜 새 설치 */
       }
     }
   }catch(e){}
+  if(freshInstall)                               /* 새 설치는 초급의 시작 표시값으로 */
+    for(const k of MODES.beginner.visOff) LN.vis[k] = 0;
   normalize();
   const lsave = ()=>{ try{ localStorage.setItem(LK, JSON.stringify(LN)); }catch(e){} };
   lsave();   /* 정규화·마이그레이션 결과를 즉시 굳힌다 — 오염값이 저장소에 남아 있지 않게 */
@@ -3080,7 +3088,8 @@ window.addEventListener('pagehide', flushSaves);
         + '<button class="ltog'+(LN.sandhi?' on':'')+'" data-tg="sandhi">변조</button>' : '';
       return '<div class="lcard" data-k="'+k+'" data-i="'+i+'">'
         + '<button class="cb2 lvis'+(vz?' on':'')+'" data-lv="'+k+'" aria-label="항상 보기">'+EYE(vz)+'</button>'
-        + '<button class="cb2'+(LN.show[k]?' on':'')+'" data-lk="'+k+'" aria-label="흐리게 보이기"><span>✓</span></button>'
+        + '<button class="cb2'+(LN.show[k]?' on':'')+'" data-lk="'+k+'"'+(vz?'':' disabled')
+        + ' aria-label="흐리게 보이기"><span>✓</span></button>'
         + '<div class="lprev'+((vz && LN.show[k])?'':' roff')+'">'+previewHTML(k, ln)+'</div>'
         + extra
         + '<div class="lsz">'
@@ -3118,7 +3127,8 @@ window.addEventListener('pagehide', flushSaves);
     if(lv2){ LN.vis[lv2.dataset.lv] = LN.vis[lv2.dataset.lv]===0 ? 1 : 0;
              lsave(); renderCards(); renderLines(); renderModeUI(); return; }
     const cb = e.target.closest('[data-lk]');
-    if(cb){ LN.show[cb.dataset.lk] = LN.show[cb.dataset.lk] ? 0 : 1;
+    if(cb){ if(LN.vis[cb.dataset.lk]===0) return;      /* 눈 꺼짐 — 체크는 의미 없음 */
+            LN.show[cb.dataset.lk] = LN.show[cb.dataset.lk] ? 0 : 1;
             lsave(); renderCards(); renderLines(); return; }
     const tg = e.target.closest('[data-tg]');
     if(tg){ LN[tg.dataset.tg] = LN[tg.dataset.tg] ? 0 : 1;
@@ -3137,7 +3147,7 @@ window.addEventListener('pagehide', flushSaves);
     {hanzi:'好',pinyin:'hǎo',pron:'하오',tone:3}]};
   const MLAB = { tone:'성조', pinyin:'병음', hanzi:'한자', pron:'독음', trans:'뜻' };
   const MDESC = {
-    beginner:'뜻을 먼저 이해하고 독음 \u2192 병음 \u2192 한자 순서로 소리와 글자를 익힙니다. 줄 순서는 고정입니다. \uD83D\uDC41 눈과 \u2713 체크박스로 줄을 가리고 열며 연습하세요.',
+    beginner:'한자와 성조는 꺼진 채 시작합니다. 뜻\u00B7독음\u00B7병음으로 먼저 익히고, 준비가 되면 \uD83D\uDC41 눈으로 한자\u00B7성조를 켜서 보세요. 줄 순서는 고정입니다.',
     shadow:'뜻과 독음은 꺼진 채 시작합니다. 소리를 듣고 따라 말한 뒤, 필요할 때 \uD83D\uDC41 눈으로 켜서 확인하세요. 줄 순서는 고정입니다.',
     custom:'줄 순서\u00B7크기\u00B7표시를 직접 구성합니다. 카드 오른쪽 \u28FF 를 끌어 순서를 바꾸세요.' };
 
