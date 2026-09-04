@@ -362,7 +362,6 @@
   .mlab{flex:0 0 76px;color:var(--dim);font-size:12px;white-space:nowrap}
   .mval{flex:1 1 auto;white-space:nowrap;overflow:hidden}
   .mrow.moff{opacity:.32}
-  .mrow.moff .mlab::after{content:' (꺼짐)'}
   #modeDesc{color:var(--dim);font-size:13px;line-height:1.55;margin-top:10px;
     border-top:1px solid var(--line);padding-top:10px}
   /* 성조 파형 카드 — 다섯 줄 카드와 같은 생김새지만 순서 변경 대상이 아니다(손잡이 없음) */
@@ -520,7 +519,7 @@
 <div class="sheet" id="shSet">
   <div class="shead">
     <button class="tb" id="sBack" aria-label="뒤로"><svg viewBox="0 0 24 24"><path d="M19 12H5M11 6l-6 6 6 6"/></svg></button>
-    <h2>설정</h2><div style="width:44px"></div>
+    <h2 aria-label="설정"><svg viewBox="0 0 24 24" style="width:23px;height:23px" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></h2><button class="tb" id="bLang" aria-label="설정 언어" style="font-weight:700;font-size:16px">K</button>
   </div>
   <div class="sbody">
     <div class="grp">학습 모드</div>
@@ -1675,11 +1674,11 @@ function stop(){ if(P.mode==='wa') waPause(); try{au.pause();}catch(e){}
 function setPlayIcon(){
   const ic=$('#playIcon');
   ic.innerHTML = S.playing
-    ? '<path d="M8.8 5.5v13M15.2 5.5v13" stroke-width="1.7"/>'
+    ? '<rect x="6.6" y="4.6" width="4.1" height="14.8" rx="1.7" fill="currentColor" stroke="none"/>'
+      + '<rect x="13.3" y="4.6" width="4.1" height="14.8" rx="1.7" fill="currentColor" stroke="none"/>'
     : '<path d="M7 4.5l12 7.5-12 7.5z"/>';
-  /* 일시정지는 굵은 막대 두 개라 같은 높이여도 더 무겁게 보인다.
-     그래서 살짝 작게 잡아야 나머지와 같은 크기로 읽힌다. */
-  ic.style.transform = S.playing ? 'scale(1.28)' : 'scale(1.22)';
+  /* 채운 막대는 선보다 무겁게 보여서 재생 삼각형보다 살짝 작게 잡는다 */
+  ic.style.transform = S.playing ? 'scale(1.04)' : 'scale(1.22)';
 }
 
 function isSkip(i){ const f=S.files[S.cur]; return !!(f && f.skip && f.skip[i]); }
@@ -2309,7 +2308,7 @@ function ovEnded(){
    ========================================================================= */
 $('#bPlay').onclick = ()=>{ if(S.cur<0){ openSheet('#shFile'); return; } S.playing?pause():play(); buzz(10); };
 $('#bFolder').onclick = ()=>openSheet('#shFile');
-$('#bSet').onclick = ()=>openSheet('#shSet');
+$('#bSet').onclick = ()=>{ openSheet('#shSet'); if(window.__applyUiLang) window.__applyUiLang(); };
 
 const MODES=['inf','cnt','thru'];
 const MODE_SCALE={inf:1.16, cnt:1.00, thru:1.00};
@@ -2513,7 +2512,7 @@ window.addEventListener('drop', e=>{ if(e.dataTransfer.files.length) importFiles
 /* ===== 새 버전 알림 =====
    GitHub에 새 index.html 을 올리면, 앱이 알아채고 아래에 알림을 띄운다.
    누르면 캐시를 비우고 새로 받는다. 불러온 음원과 설정은 그대로 남는다. */
-const APP_VERSION = 'v1.11.10';
+const APP_VERSION = 'v1.12.0';
 const APP_DATE = '2026-09-04';
 let verChecked = 0;
 
@@ -3089,8 +3088,8 @@ window.addEventListener('pagehide', flushSaves);
     box.innerHTML = LN.order.map((k,i)=>{
       const sz = lv(k), mx = MAXSZ[k], vz = LN.vis[k]!==0;
       const extra = k==='tone'
-        ? '<button class="ltog'+(LN.grid?' on':'')+'" data-tg="grid">5선</button>'
-        + '<button class="ltog'+(LN.sandhi?' on':'')+'" data-tg="sandhi">변조</button>' : '';
+        ? '<button class="ltog'+(LN.grid?' on':'')+'" data-tg="grid">'+trS('5선')+'</button>'
+        + '<button class="ltog'+(LN.sandhi?' on':'')+'" data-tg="sandhi">'+trS('변조')+'</button>' : '';
       return '<div class="lcard" data-k="'+k+'" data-i="'+i+'">'
         + '<button class="cb2 lvis'+(vz?' on':'')+'" data-lv="'+k+'" aria-label="항상 보기">'+EYE(vz)+'</button>'
         + '<button class="cb2'+(LN.show[k]?' on':'')+'" data-lk="'+k+'"'+(vz?'':' disabled')
@@ -3160,14 +3159,12 @@ window.addEventListener('pagehide', flushSaves);
     seg.querySelectorAll('button').forEach(b=> b.classList.toggle('on', b.dataset.m===LN.mode));
     document.getElementById('modePrev').innerHTML = LN.order.map(k=>{
       const isOff = LN.vis[k]===0;             /* 지금 실제로 꺼져 있는 줄 — 견본이 거짓말하지 않게 */
-      return '<div class="mrow'+(isOff?' moff':'')+'"><span class="mlab">'+MLAB[k]+'</span>'
+      return '<div class="mrow'+(isOff?' moff':'')+'"><span class="mlab">'+mlabTxt(k,isOff)+'</span>'
            + '<span class="mval">'+previewHTML(k, NIHAO)+'</span></div>';
     }).join('');
-    document.getElementById('modeDesc').textContent = MDESC[LN.mode];
+    document.getElementById('modeDesc').textContent = mdescTxt(LN.mode);
     const hint = document.querySelector('.lchint');
-    if(hint) hint.textContent = LN.mode==='custom'
-      ? '\u28FF 를 끌어 순서 변경 \u2014 메인 화면의 줄 순서도 같이 바뀝니다'
-      : '이 모드에서는 줄 순서가 고정됩니다 \u2014 \uD83D\uDC41\u00B7\u2713\u00B7크기는 조절할 수 있습니다';
+    if(hint) hint.textContent = hintTxt(LN.mode);
   }
 
   function setMode(m){
@@ -3193,6 +3190,121 @@ window.addEventListener('pagehide', flushSaves);
   document.getElementById('segMode').addEventListener('click', e=>{
     const b = e.target.closest('[data-m]'); if(b) setMode(b.dataset.m);
   });
+
+  /* ---------- 설정 화면 다국어 (K/C/J/E) ----------
+     설정 문구만 번역한다 — 설명을 이해하는 용도. 메인 화면·토스트는 한국어 유지.
+     정적 문구는 시트의 텍스트 노드를 등록해 통째로 치환하고,
+     JS가 다시 그리는 것(모드 카드·5선·변조)은 함수로 현재 언어를 읽는다. */
+  const UI_ORDER=['ko','zh','ja','en'], UI_LETTER={ko:'K',zh:'C',ja:'J',en:'E'};
+  let uiLang = localStorage.getItem('ongal_ui_lang')||'ko';
+  if(!UI_ORDER.includes(uiLang)) uiLang='ko';
+
+  const TR = {
+  '학습 모드':{zh:'学习模式',ja:'学習モード',en:'Study mode'},
+  '초급':{zh:'初级',ja:'初級',en:'Beginner'},
+  '섀도잉':{zh:'跟读',ja:'シャドーイング',en:'Shadowing'},
+  '커스텀':{zh:'自定义',ja:'カスタム',en:'Custom'},
+  '성조 파형':{zh:'声调曲线',ja:'声調カーブ',en:'Tone curve'},
+  '대본 5줄':{zh:'五行课文',ja:'5行スクリプト',en:'5-line script'},
+  '↺ 기본값으로':{zh:'↺ 恢复默认',ja:'↺ 初期値に戻す',en:'↺ Reset to default'},
+  '기본 대본 불러오기':{zh:'载入默认课文',ja:'基本スクリプトを読み込む',en:'Load default script'},
+  '반복':{zh:'重复',ja:'リピート',en:'Repeat'},
+  'n회 반복 횟수':{zh:'重复次数',ja:'リピート回数',en:'Repeat count'},
+  '툴바의 반복 버튼을 n회로 두었을 때 몇 번 되풀이할지':{zh:'工具栏的重复按钮设为 n 次时重复的次数',ja:'ツールバーのリピートを n回にしたとき何回繰り返すか',en:'How many repeats when the toolbar is set to n times'},
+  '따라 말하기 간격':{zh:'跟读间隔',ja:'あとについて話す間',en:'Speak-along pause'},
+  '문장이 끝나면 그 길이만큼 쉬어 줍니다':{zh:'句子结束后按其长度停顿',ja:'文が終わるとその長さぶん休止します',en:'Pauses after each sentence for its length'},
+  '문장 나누기':{zh:'分句',ja:'文の分割',en:'Sentence splitting'},
+  '문장 길이':{zh:'句子长度',ja:'文の長さ',en:'Sentence length'},
+  '두 문장이 하나로 붙어 오면 짧게, 너무 잘게 끊기면 길게':{zh:'两句连在一起时选「短」，切得太碎时选「长」',ja:'2文がつながるときは「短く」、細かすぎるときは「長く」',en:'Shorter if sentences merge, longer if they split too much'},
+  '짧게':{zh:'短',ja:'短く',en:'Shorter'},
+  '보통':{zh:'中',ja:'普通',en:'Normal'},
+  '길게':{zh:'长',ja:'長く',en:'Longer'},
+  '현재 파일 다시 나누기':{zh:'重新分割当前文件',ja:'現在のファイルを再分割',en:'Re-split current file'},
+  '민감도를 바꾼 뒤 눌러 주세요':{zh:'更改灵敏度后请点击',ja:'感度を変えてから押してください',en:'Press after changing sensitivity'},
+  '다시 분석':{zh:'重新分析',ja:'再分析',en:'Re-analyze'},
+  '재생':{zh:'播放',ja:'再生',en:'Playback'},
+  '느리게 들어도 목소리 유지':{zh:'慢速播放保持音调',ja:'低速でも声の高さを維持',en:'Keep pitch at slow speed'},
+  '끄면 테이프처럼 음이 낮아집니다':{zh:'关闭后像磁带一样音调变低',ja:'オフにするとテープのように音が低くなります',en:'Off: pitch drops like a tape'},
+  '소리가 안 날 때':{zh:'没有声音时',ja:'音が出ないとき',en:'If there is no sound'},
+  '지금은 기본 방식으로 재생합니다':{zh:'当前使用默认方式播放',ja:'現在は標準方式で再生中',en:'Currently using the default engine'},
+  '예비 방식으로':{zh:'切换备用方式',ja:'予備方式へ',en:'Use fallback'},
+  '진동 피드백':{zh:'震动反馈',ja:'振動フィードバック',en:'Haptic feedback'},
+  '화면 켜 두기':{zh:'保持屏幕常亮',ja:'画面をつけたまま',en:'Keep screen on'},
+  '학습 중 화면이 꺼지지 않습니다':{zh:'学习时屏幕不会熄灭',ja:'学習中に画面が消えません',en:'Screen stays on while studying'},
+  '켬':{zh:'开',ja:'オン',en:'On'},
+  '끔':{zh:'关',ja:'オフ',en:'Off'},
+  '설치':{zh:'安装',ja:'インストール',en:'Install'},
+  '홈 화면에 설치':{zh:'添加到主屏幕',ja:'ホーム画面に追加',en:'Add to home screen'},
+  '브라우저가 준비되면 버튼이 켜집니다':{zh:'浏览器就绪后按钮可用',ja:'ブラウザの準備ができるとボタンが有効になります',en:'Button enables when the browser is ready'},
+  '이 앱에 대해':{zh:'关于本应用',ja:'このアプリについて',en:'About'},
+  '앱 버전':{zh:'应用版本',ja:'アプリのバージョン',en:'App version'},
+  '새 버전 확인':{zh:'检查新版本',ja:'更新を確認',en:'Check for updates'},
+  '인터넷 사용':{zh:'网络使用',ja:'インターネット使用',en:'Internet use'},
+  '전혀 하지 않습니다. 불러온 음원은 이 기기 밖으로 나가지 않습니다.':{zh:'完全不使用。载入的音频不会离开本设备。',ja:'一切使用しません。読み込んだ音源は端末の外に出ません。',en:'None. Loaded audio never leaves this device.'},
+  '저장 상태':{zh:'数据保存',ja:'保存状態',en:'Storage'},
+  '켰다 꺼도 파일과 설정이 남습니다.':{zh:'关闭后文件和设置仍会保留。',ja:'再起動してもファイルと設定は残ります。',en:'Files and settings persist across restarts.'},
+  '전체 지우기':{zh:'全部清除',ja:'すべて消去',en:'Erase all'},
+  '불러온 파일과 분석 결과를 모두 삭제합니다':{zh:'删除所有已载入文件和分析结果',ja:'読み込んだファイルと分析結果をすべて削除します',en:'Deletes all loaded files and analysis'},
+  '지우기':{zh:'清除',ja:'消去',en:'Erase'},
+  '만든 사람':{zh:'作者',ja:'作成者',en:'Made by'},
+  '5선':{zh:'五线',ja:'5線',en:'Grid'},
+  '변조':{zh:'变调',ja:'変調',en:'Sandhi'} };
+
+  const MLAB_ML = {
+    ko:MLAB,
+    zh:{tone:'声调',pinyin:'拼音',hanzi:'汉字',pron:'韩文注音',trans:'释义'},
+    ja:{tone:'声調',pinyin:'ピンイン',hanzi:'漢字',pron:'ハングル読み',trans:'意味'},
+    en:{tone:'Tones',pinyin:'Pinyin',hanzi:'Hanzi',pron:'Kor. reading',trans:'Meaning'} };
+  const OFF_ML = {ko:' (꺼짐)',zh:' (关)',ja:' (オフ)',en:' (off)'};
+  const MDESC_ML = {
+    ko:MDESC,
+    zh:{beginner:'汉字和声调默认关闭。先用释义·注音·拼音学习，准备好后用 👁 打开汉字·声调。行的顺序是固定的。',
+        shadow:'释义和注音默认关闭。先听声音跟读，需要时用 👁 打开确认。行的顺序是固定的。',
+        custom:'自行设置行的顺序·大小·显示。拖动卡片右侧的 ⠿ 调整顺序。'},
+    ja:{beginner:'漢字と声調はオフで始まります。意味・読み・ピンインで先に学び、準備ができたら 👁 で漢字・声調を表示。行の順序は固定です。',
+        shadow:'意味と読みはオフで始まります。音声を聞いて口に出し、必要なときに 👁 で確認してください。行の順序は固定です。',
+        custom:'行の順序・サイズ・表示を自由に設定します。カード右側の ⠿ をドラッグして順序を変更。'},
+    en:{beginner:'Hanzi and tones start hidden. Learn with meaning, reading and pinyin first, then tap 👁 to reveal them. Line order is fixed.',
+        shadow:'Meaning and reading start hidden. Listen and repeat aloud; tap 👁 to check when needed. Line order is fixed.',
+        custom:'Arrange order, size and visibility yourself. Drag ⠿ on each card to reorder.'} };
+  const HINT_ML = {
+    ko:{custom:'⠿ 를 끌어 순서 변경 — 메인 화면의 줄 순서도 같이 바뀝니다',
+        locked:'이 모드에서는 줄 순서가 고정됩니다 — 👁·✓·크기는 조절할 수 있습니다'},
+    zh:{custom:'拖动 ⠿ 调整顺序 — 主界面的行序也会随之改变',
+        locked:'此模式下行的顺序固定 — 👁·✓·大小可调'},
+    ja:{custom:'⠿ をドラッグして順序変更 — メイン画面の行順も変わります',
+        locked:'このモードでは行の順序が固定 — 👁・✓・サイズは調整可'},
+    en:{custom:'Drag ⠿ to reorder — the main screen follows',
+        locked:'Line order is fixed in this mode — 👁, ✓ and size stay adjustable'} };
+
+  function trS(ko){ if(uiLang==='ko') return ko; const e=TR[ko]; return (e&&e[uiLang])||ko; }
+  function mlabTxt(k,off){ return MLAB_ML[uiLang][k] + (off?OFF_ML[uiLang]:''); }
+  function mdescTxt(m){ return MDESC_ML[uiLang][m]; }
+  function hintTxt(m){ return HINT_ML[uiLang][m==='custom'?'custom':'locked']; }
+
+  /* 시트를 매번 다시 걷는다 — 팩 로더 등이 텍스트 노드를 갈아치워도 항상 잡힌다.
+     각 노드의 한국어 원문은 노드 자신에 기억시킨다 (첫 방문 시). */
+  function applyUiLang(){
+    const w=document.createTreeWalker(document.getElementById('shSet'), NodeFilter.SHOW_TEXT);
+    let n;
+    while(n=w.nextNode()){
+      const koSrc = n.__ko !== undefined ? n.__ko : n.nodeValue;
+      const key = koSrc.trim();
+      if(!key || !TR[key]) continue;
+      if(n.__ko === undefined) n.__ko = n.nodeValue;
+      n.nodeValue = uiLang==='ko' ? n.__ko
+        : n.__ko.replace(key, TR[key][uiLang]||key);
+    }
+    const b=document.getElementById('bLang'); if(b) b.textContent=UI_LETTER[uiLang];
+    renderCards(); renderModeUI();
+  }
+  document.getElementById('bLang').onclick = ()=>{
+    uiLang = UI_ORDER[(UI_ORDER.indexOf(uiLang)+1)%UI_ORDER.length];
+    try{ localStorage.setItem('ongal_ui_lang', uiLang); }catch(e){}
+    applyUiLang();
+  };
+  window.__applyUiLang = applyUiLang;
+  applyUiLang();
 
   document.getElementById('bLdefault').onclick = ()=>{
     Object.assign(LN, DEFAULT_LN());
