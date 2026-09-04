@@ -2505,7 +2505,7 @@ window.addEventListener('drop', e=>{ if(e.dataTransfer.files.length) importFiles
 /* ===== 새 버전 알림 =====
    GitHub에 새 index.html 을 올리면, 앱이 알아채고 아래에 알림을 띄운다.
    누르면 캐시를 비우고 새로 받는다. 불러온 음원과 설정은 그대로 남는다. */
-const APP_VERSION = 'v1.11.7';
+const APP_VERSION = 'v1.11.8';
 const APP_DATE = '2026-09-04';
 let verChecked = 0;
 
@@ -3192,8 +3192,14 @@ window.addEventListener('pagehide', flushSaves);
   });
 
   document.getElementById('bLdefault').onclick = ()=>{
-    Object.assign(LN, DEFAULT_LN()); normalize(); lsave();
-    renderCards(); renderLines(); toast('대본 5줄을 기본값으로 되돌렸습니다');
+    Object.assign(LN, DEFAULT_LN());
+    /* 「기본값으로」 = 현재 모드의 시작값으로. 잠금 모드의 순서는 normalize가 강제하고,
+       눈은 모드의 시작 표시값(초급: 한자·성조 꺼짐 / 섀도잉: 뜻·독음 꺼짐)을 다시 편다. */
+    if(LN.mode !== 'custom')
+      for(const k of MODES[LN.mode].visOff) LN.vis[k] = 0;
+    normalize(); lsave();
+    renderCards(); renderLines(); renderModeUI();
+    toast('대본 5줄을 기본값으로 되돌렸습니다');
   };
 
   /* 길게 눌러 순서 변경 — 카드 높이가 같으므로 이동 칸 수는 거리/높이로 구한다 */
