@@ -367,7 +367,7 @@
     border-top:1px solid var(--line);padding-top:10px}
   /* 성조 파형 카드 — 다섯 줄 카드와 같은 생김새지만 순서 변경 대상이 아니다(손잡이 없음) */
   #rhyCard{margin:2px 0 4px}
-  #rhyCard .lprev svg{display:block;width:150px;height:34px}
+  #rhyCard .lprev svg{display:block;width:190px;height:30px}
   #rhyCard .lprev{mask-image:none;-webkit-mask-image:none}
   .lcfoot{display:flex;gap:8px;padding:0 0 4px}
   .lcfoot .seg{flex:1 1 0;justify-content:center;padding:11px 10px;font-size:13.5px;color:var(--ink)}
@@ -537,10 +537,18 @@
     <div class="grp">성조 파형</div>
     <div class="lcard" id="rhyCard">
       <button class="cb2 lvis on" id="rhyCb" aria-label="성조 파형 항상 보기"></button>
-      <div class="lprev" id="rhyPrev"><svg viewBox="0 0 150 34" fill="none" stroke="var(--green)" stroke-width="2.6" stroke-linecap="round">
-        <path d="M5 24 C14 26.5 22 25 32 18 C42 11 52 9 64 8.5"/>
-        <path d="M80 11 C92 12.5 102 18 114 22.5 C120 24.5 126 25 131 25"/>
-        <path d="M135 27 C139 29 143 30.5 146 31.5" stroke-width="2" opacity=".75"/>
+      <div class="lprev" id="rhyPrev"><svg viewBox="0 0 190 34" fill="none" stroke="var(--green)" stroke-width="2" stroke-linecap="round">
+        <path d="M6 10 c1.5 4 2.5 9 4.5 12"/>
+        <path d="M17 23 c1.5 -2 2.5 -6 4.5 -6 c2 0 2.5 3.5 4.5 4.5"/>
+        <path d="M33 12 c2 1.5 3.5 6.5 6 9"/>
+        <path d="M46 21 c1.5 -1 3 -5.5 5 -5.5 c2 0 2.5 2.5 4.5 3.5"/>
+        <path d="M63 13 c2.5 0.5 5 4.5 8 6.5 c1.5 1 3 1.5 4.5 1.5"/>
+        <path d="M83 19 c2 -3 4.5 -5 7 -4.5"/>
+        <path d="M97 11 c2 2.5 4 8 6.5 10.5"/>
+        <path d="M111 22 c1.5 -1.5 3.5 -4.5 6 -4 c2.5 0.5 3.5 3 6 3.5"/>
+        <path d="M130 14 c2.5 1.5 5.5 5 8.5 7"/>
+        <path d="M145 23 c1.5 -1 3 -3.5 5 -3.5"/>
+        <path d="M157 26 c2 1.5 4 2.5 6 3" opacity=".7"/>
       </svg></div>
     </div>
     <div class="grp">대본 5줄</div>
@@ -2505,7 +2513,7 @@ window.addEventListener('drop', e=>{ if(e.dataTransfer.files.length) importFiles
 /* ===== 새 버전 알림 =====
    GitHub에 새 index.html 을 올리면, 앱이 알아채고 아래에 알림을 띄운다.
    누르면 캐시를 비우고 새로 받는다. 불러온 음원과 설정은 그대로 남는다. */
-const APP_VERSION = 'v1.11.9';
+const APP_VERSION = 'v1.11.10';
 const APP_DATE = '2026-09-04';
 let verChecked = 0;
 
