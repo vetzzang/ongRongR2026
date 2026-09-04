@@ -2505,7 +2505,7 @@ window.addEventListener('drop', e=>{ if(e.dataTransfer.files.length) importFiles
 /* ===== 새 버전 알림 =====
    GitHub에 새 index.html 을 올리면, 앱이 알아채고 아래에 알림을 띄운다.
    누르면 캐시를 비우고 새로 받는다. 불러온 음원과 설정은 그대로 남는다. */
-const APP_VERSION = 'v1.11.8';
+const APP_VERSION = 'v1.11.9';
 const APP_DATE = '2026-09-04';
 let verChecked = 0;
 
@@ -3057,12 +3057,9 @@ window.addEventListener('pagehide', flushSaves);
 
   /* ---------- 칩·설정 ---------- */
   /* ---------- 설정: 대본 5줄 카드 ---------- */
-  const SAMPLE = { text:{trans:'나는 내일 베이징으로 출장을 갑니다.'}, syllables:[
-    {hanzi:'我',pinyin:'wǒ',pron:'워',tone:3},{hanzi:'明',pinyin:'míng',pron:'밍',tone:2},
-    {hanzi:'天',pinyin:'tiān',pron:'티엔',tone:1},{hanzi:'要',pinyin:'yào',pron:'야오',tone:4},
-    {hanzi:'去',pinyin:'qù',pron:'취',tone:4},{hanzi:'北',pinyin:'běi',pron:'베이',tone:3},
-    {hanzi:'京',pinyin:'jīng',pron:'징',tone:1},{hanzi:'出',pinyin:'chū',pron:'추',tone:1},
-    {hanzi:'差',pinyin:'chāi',pron:'차이',tone:1,punct:'。'}]};
+  const SAMPLE = { text:{trans:'안녕하세요'}, syllables:[
+    {hanzi:'你',pinyin:'nǐ',pron:'니',tone:3,toneReal:2},
+    {hanzi:'好',pinyin:'hǎo',pron:'하오',tone:3}]};   /* 모든 설정 미리보기의 고정 견본 */
 
   function previewHTML(k, ln){
     if(k === 'trans') return '<span style="font-size:'+fsOf('trans')+'px">'
@@ -3080,7 +3077,7 @@ window.addEventListener('pagehide', flushSaves);
   function renderCards(){
     const box = document.getElementById('lcards');
     if(!box) return;
-    const ln = currentLine() || SAMPLE;
+    const ln = SAMPLE;                       /* 설정 미리보기는 你好 고정 — 메인 화면과 무관 */
     box.innerHTML = LN.order.map((k,i)=>{
       const sz = lv(k), mx = MAXSZ[k], vz = LN.vis[k]!==0;
       const extra = k==='tone'
@@ -3142,9 +3139,7 @@ window.addEventListener('pagehide', flushSaves);
   /* ---------- 설정: 학습 모드 카드 ----------
      미리보기는 你好 고정 견본 — 메인 화면의 파일·문장과 무관하다.
      모드 버튼 = 즉시 적용. 커스텀을 떠날 때 순서·표시를 스냅샷해 두고 돌아오면 복원. */
-  const NIHAO = { text:{trans:'안녕하세요'}, syllables:[
-    {hanzi:'你',pinyin:'nǐ',pron:'니',tone:3,toneReal:2},
-    {hanzi:'好',pinyin:'hǎo',pron:'하오',tone:3}]};
+  const NIHAO = SAMPLE;                        /* 학습 모드 미리보기도 같은 고정 견본 */
   const MLAB = { tone:'성조', pinyin:'병음', hanzi:'한자', pron:'독음', trans:'뜻' };
   const MDESC = {
     beginner:'한자와 성조는 꺼진 채 시작합니다. 뜻\u00B7독음\u00B7병음으로 먼저 익히고, 준비가 되면 \uD83D\uDC41 눈으로 한자\u00B7성조를 켜서 보세요. 줄 순서는 고정입니다.',
