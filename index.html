@@ -1353,7 +1353,7 @@ async function importFiles(list){
       const rec = { id:'f'+Date.now()+'_'+k, name:f.name, blob:f, dur, env, hop,
                     pcm, psr:sr, sent, ver:ALGO_VER, tlen:S.tlen, sel:true, last:0 };
       S.files.push(rec); await DB.putFile(rec);
-    }catch(e){ toast('읽을 수 없는 파일: '+f.name); }
+    }catch(e){ toast(uiN('읽을 수 없는 파일: {0}', f.name)); }
   }
   importing=false;
   $('#busy').classList.remove('on');
@@ -1370,8 +1370,8 @@ function renderFileList(){
     const el=document.createElement('div'); el.className='item';
     el.innerHTML = `<span class="cb ${f.sel?'on':''}"><svg viewBox="0 0 24 24"><path d="M4 12.5l5.5 5.5L20 7"/></svg></span>
       <div style="flex:1;min-width:0"><div class="nm">${esc(f.name)}</div>
-      <div class="sub">${fmtShort(f.dur)} · 문장 ${f.sent.length}개${
-        f.skip&&Object.keys(f.skip).length?` · ${Object.keys(f.skip).length}개 건너뜀`:''}</div></div>
+      <div class="sub">${fmtShort(f.dur)} · ${uiN('문장 {0}개', f.sent.length)}${
+        f.skip&&Object.keys(f.skip).length?` · ${uiN('{0}개 건너뜀', Object.keys(f.skip).length)}`:''}</div></div>
       <button class="x" aria-label="삭제"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>`;
     el.querySelector('.cb').onclick = ()=>{ f.sel=!f.sel; DB.putFile(f); renderFileList(); };
     el.querySelector('.x').onclick = async e=>{ e.stopPropagation();
@@ -1386,7 +1386,7 @@ function renderFileList(){
   $('#fSelBox').classList.toggle('on', nsel>0 && nsel===S.files.length);
   $('#fPlay').disabled = nsel===0;
   updateDelBtn();
-  $('#fPlayTxt').textContent = nsel?`${nsel}개 파일 열기`:'열기';
+  $('#fPlayTxt').textContent = nsel?uiN('{0}개 파일 열기', nsel):uiT('열기');
 }
 /* 두 번 눌러야 지워진다. 여러 개를 한 번에 날리는 일이라 되돌릴 수 없으므로. */
 let delArm=false, delT=null;
@@ -1394,7 +1394,7 @@ function updateDelBtn(){
   const b=$('#fDelSel'); if(!b) return;
   const n=S.files.filter(f=>f.sel).length;
   b.style.display = n ? 'block' : 'none';
-  b.textContent = delArm ? '정말 지울까요?' : n+'개 삭제';
+  b.textContent = delArm ? uiT('정말 지울까요?') : uiN('{0}개 삭제', n);
   b.classList.toggle('arm', delArm);
 }
 $('#fDelSel').onclick = async ()=>{
@@ -1413,7 +1413,7 @@ $('#fDelSel').onclick = async ()=>{
   if(ni>=0){ S.cur=ni; }                       // 열려 있던 파일이 남아 있으면 그대로 둔다
   else { stop(); S.cur=-1; S.sent=[]; if(S.files.length) load(0); else resetUI(); }
   renderFileList(); renderWheel(); buzz(20);
-  toast(sel.length+'개 파일을 지웠습니다');
+  toast(uiN('{0}개 파일을 지웠습니다', sel.length));
 };
 
 const esc = s => s.replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -1424,7 +1424,7 @@ let wheelProg=false, wheelT=null, wheelFocus=0;
 function renderWheel(){
   const inner=$('#wheelInner'); if(!inner) return;
   inner.innerHTML='';
-  if(!S.files.length){ inner.innerHTML='<div class="row empty">불러온 파일이 없습니다</div>'; return; }
+  if(!S.files.length){ inner.innerHTML='<div class="row empty">'+esc(uiT('불러온 파일이 없습니다'))+'</div>'; return; }
   S.files.forEach((f,i)=>{
     const el=document.createElement('div');
     el.className='row'+(i===S.cur?' loaded':'');
@@ -1463,7 +1463,7 @@ let rewindArm=false, rewindT=null;
 function armRewind(){
   rewindArm=true; buzz(10);
   $('#sIdx').classList.add('arm');
-  $('#sIdx').textContent='처음으로 되돌릴까요?';
+  $('#sIdx').textContent=uiT('처음으로 되돌릴까요?');
   clearTimeout(rewindT);
   rewindT=setTimeout(()=>{ rewindArm=false; $('#sIdx').classList.remove('arm'); updateMeta(); }, 3000);
 }
@@ -2194,7 +2194,7 @@ function updateMeta(){
   if(S.cur<0){ $('#sIdx').textContent='— / —'; $('#sLen').textContent=''; return; }
   const c=S.sent[S.si];
   if(!rewindArm) $('#sIdx').textContent = (S.si+1)+' / '+S.sent.length;
-  $('#sLen').textContent = '문장 '+((c.e-c.s).toFixed(1))+'초';
+  $('#sLen').textContent = uiN('문장 {0}초', (c.e-c.s).toFixed(1));
   const key=S.files[S.cur].id+':'+S.si;
   $('#bStar').classList.toggle('on', !!S.stars[key]);
 }
@@ -2475,8 +2475,10 @@ seg('#segPitch','pitch',applyRate);
 seg('#segHaptic','haptic');
 seg('#segWake','wake',()=>{ S.wake?requestWake():releaseWake(); });
 
-/* 설정의 동적 값 표기 — 현재 설정 언어로. __trS 는 다국어부(그래프트)에서 붙인다 */
+/* 동적 값 표기 — 현재 설정 언어로. __trS/__trN 은 다국어부(그래프트)에서 붙는다 */
 const uiT = ko => (window.__trS ? window.__trS(ko) : ko);
+const uiN = function(k){ if(window.__trN) return window.__trN.apply(null, arguments);
+  let t=k; for(let i=1;i<arguments.length;i++) t=t.split('{'+(i-1)+'}').join(arguments[i]); return t; };
 window.__refreshSetVals = ()=>{
   const c=$('#vCount'), g=$('#vGap');
   if(c) c.textContent = S.count + uiT('회');
@@ -2502,7 +2504,7 @@ $('#bReanalyze').onclick = async ()=>{
   S.sent=f.sent; S.si=0; S.reps=0;
   if(S.playing) P.seek(S.sent[0].s);
   cache.zoom=null; TONE.cache.clear(); paintAll(); updateMeta(); renderFileList();
-  toast('문장 '+f.sent.length+'개로 다시 나눴습니다');
+  toast(uiN('문장 {0}개로 다시 나눴습니다', f.sent.length));
 };
 $('#bEngine').onclick = ()=>{
   if(S.cur<0){ toast('먼저 파일을 불러오세요'); return; }
@@ -2540,7 +2542,7 @@ window.addEventListener('drop', e=>{ if(e.dataTransfer.files.length) importFiles
 /* ===== 새 버전 알림 =====
    GitHub에 새 index.html 을 올리면, 앱이 알아채고 아래에 알림을 띄운다.
    누르면 캐시를 비우고 새로 받는다. 불러온 음원과 설정은 그대로 남는다. */
-const APP_VERSION = 'v1.13.11';
+const APP_VERSION = 'v2.0.1';
 const APP_DATE = '2026-09-06';
 let verChecked = 0;
 
@@ -2720,6 +2722,10 @@ window.addEventListener('pagehide', flushSaves);
   const lv   = k => Math.min(MAXSZ[k], Math.max(1, LN.size[k]|0));
   const fsOf = k => Math.round(BASE[k] * STEP[lv(k)-1]);
   const tdim = () => TDIM[lv('tone')-1];
+  /* 기기 계수 — 태블릿처럼 화면이 넓으면 대본 글자를 비례해 키운다.
+     폰(360~412px)≈1.0 / 갤럭시탭 A7≈0.9~1.1 / 레노버 800px≈1.33. 회전 시 resize→renderLines 로 즉시 반영.
+     설정 미리보기·카드에는 적용하지 않는다(레이아웃 한 줄 유지). */
+  const devK = () => Math.min(1.6, Math.max(1, innerWidth/600));   /* 폰은 그대로(하한 1), 넓을 때만 확대 */
 
   /* ---------- 성조 기호 (파트2 명세 그대로) ---------- */
 
@@ -2727,8 +2733,9 @@ window.addEventListener('pagehide', flushSaves);
      굵기가 변하는 면(폴리곤)으로 그린다: 1성 평평한 막대, 2성 가늘게 시작해
      두꺼워지며 상승, 3성 체크(√) 꺾임, 4성 두껍게 시작해 가늘어지며 하강, 경성 점.
      단색(잉크색) — 색상 구분 대신 형태·굵기로 방향을 읽는다. */
-  function toneCell(tone, real){
-    const d = tdim();
+  function toneCell(tone, real, K){
+    const d0 = tdim(); K = K || 1;
+    const d = { w:d0.w*K, h:d0.h*K, s:d0.s*K };
     const pad = d.s*1.4, top = pad, ch = d.h - pad*2;
     const Y = p => top + (5-p)/4*ch;
     const W = d.w, s = d.s, INK = '#e8edf5';   /* 글자와 같은 밝기(--ink) */
@@ -2837,13 +2844,14 @@ window.addEventListener('pagehide', flushSaves);
     /* [a안] 다섯 줄 전부 한자 최대 크기(레벨 3) 박스 높이로 통일·고정 —
        어떤 줄의 크기를 줄여도 행 높이가 출렁이지 않고, 체크박스 위치가
        행 가운데에 그대로 고정된다. 글자·도형은 vertical-align:middle. */
-    const ROWBOX = Math.round(BASE.hanzi*STEP[MAXSZ.hanzi-1]*1.5);
+    const K = devK();
+    const ROWBOX = Math.round(BASE.hanzi*STEP[MAXSZ.hanzi-1]*1.5*K);
     for(const k of syOrder){
       RH[k]  = ROWBOX;
-      FSZ[k] = k==='tone' ? '' : 'font-size:'+fsOf(k)+'px';
+      FSZ[k] = k==='tone' ? '' : 'font-size:'+Math.round(fsOf(k)*K)+'px';
     }
     const cell = (k,y)=>
-      k==='tone'   ? toneCell(y.tone, y.toneReal)
+      k==='tone'   ? toneCell(y.tone, y.toneReal, K)
     : k==='pinyin' ? '<span class="py">'+esc(y.pinyin)+'</span>'
     : k==='hanzi'  ? '<i class="pc">'+esc(y.pre||'')+'</i><b>'+esc(y.hanzi)+'</b>'
     :                '<span class="kr">'+esc(y.pron)+'</span>';
@@ -2912,10 +2920,10 @@ window.addEventListener('pagehide', flushSaves);
     const ttxCls = 'ttx'+(LN.show.trans?'':' roff2');
     const transTd = (g,txt)=>'<td colspan="'+spanOf(g)+'" style="text-align:left;vertical-align:middle">'
       + '<div class="'+ttxCls+'" style="white-space:normal;'
-      + 'font-size:'+fsOf('trans')+'px;padding:0">'+esc(txt||'')+'</div></td>';
+      + 'font-size:'+Math.round(fsOf('trans')*K)+'px;padding:0">'+esc(txt||'')+'</div></td>';
     const transRowH = ROWBOX;   /* 뜻 행도 같은 박스 */
     const transHTML = t ? '<div id="ltrans"><div class="'+ttxCls
-           + '" style="font-size:'+fsOf('trans')+'px;min-height:'+ROWBOX
+           + '" style="font-size:'+Math.round(fsOf('trans')*K)+'px;min-height:'+ROWBOX
            + 'px;display:flex;align-items:center">'+esc(t)+'</div></div>' : '';
 
     /* 한 줄 모드: 표 하나 + (정렬 가능하면) 뜻을 구간 colspan 행으로 */
@@ -3211,6 +3219,71 @@ window.addEventListener('pagehide', flushSaves);
   '받는 중…':{zh:'下载中…',ja:'取得中…',en:'Updating…'},
   '읽는 중…':{zh:'读取中…',ja:'読み込み中…',en:'Loading…'},
   '가져오기':{zh:'导入',ja:'取り込み',en:'Import'},
+  /* ── 메인·파일 화면·토스트 (v2.0.0 전체 다국어) ── */
+  '폴더 버튼을 눌러':{zh:'点击文件夹按钮',ja:'フォルダボタンを押して',en:'Tap the folder button'},
+  'MP3 파일을 불러오세요':{zh:'导入 MP3 文件',ja:'MP3ファイルを読み込みます',en:'to import an MP3 file'},
+  '파일':{zh:'文件',ja:'ファイル',en:'Files'},
+  '전체 선택':{zh:'全选',ja:'すべて選択',en:'Select all'},
+  '＋ 가져오기 버튼을 눌러 음원을 불러오세요':{zh:'点击 ＋ 导入按钮加载音频',ja:'＋ 取り込みボタンで音源を読み込みます',en:'Tap the ＋ import button to load audio'},
+  '파일은 폰 밖으로 나가지 않습니다':{zh:'文件不会离开您的设备',ja:'ファイルは端末の外に出ません',en:'Files never leave your device'},
+  '폴더째 가져오기':{zh:'整个文件夹导入',ja:'フォルダごと取り込み',en:'Import a whole folder'},
+  '파일 골라 가져오기':{zh:'挑选文件导入',ja:'ファイルを選んで取り込み',en:'Pick files to import'},
+  '처음으로 되돌릴까요?':{zh:'回到开头吗？',ja:'最初に戻しますか？',en:'Rewind to the start?'},
+  '정말 지울까요?':{zh:'确定删除吗？',ja:'本当に削除しますか？',en:'Really delete?'},
+  '{0}개 삭제':{zh:'删除 {0} 个',ja:'{0}件を削除',en:'Delete {0}'},
+  '문장 {0}초':{zh:'句子 {0}秒',ja:'文 {0}秒',en:'Sentence {0}s'},
+  '문장 {0}개':{zh:'{0} 个句子',ja:'{0}文',en:'{0} sentences'},
+  '{0}개 건너뜀':{zh:'跳过 {0} 个',ja:'{0}件スキップ',en:'{0} skipped'},
+  '자막 {0}줄':{zh:'{0} 条字幕',ja:'字幕{0}行',en:'{0} subtitle lines'},
+  '자막 끄기':{zh:'关闭字幕',ja:'字幕オフ',en:'Subtitles off'},
+  '{0}개 파일 열기':{zh:'打开 {0} 个文件',ja:'{0}件のファイルを開く',en:'Open {0} files'},
+  '열기':{zh:'打开',ja:'開く',en:'Open'},
+  '{0}개 파일을 지웠습니다':{zh:'已删除 {0} 个文件',ja:'{0}件のファイルを削除しました',en:'Deleted {0} files'},
+  '문장 {0}개로 다시 나눴습니다':{zh:'已重新分为 {0} 个句子',ja:'{0}文に分け直しました',en:'Re-split into {0} sentences'},
+  '읽을 수 없는 파일: {0}':{zh:'无法读取的文件：{0}',ja:'読み込めないファイル: {0}',en:'Unreadable file: {0}'},
+  '아직 못 읽는 자막 형식입니다 (srt·vtt만 됩니다): {0}':{zh:'尚不支持的字幕格式（仅支持 srt·vtt）：{0}',ja:'未対応の字幕形式です（srt·vttのみ対応）: {0}',en:'Unsupported subtitle format (only srt/vtt): {0}'},
+  '자막 {0}개 붙임 · {1}':{zh:'已附加 {0} 条字幕 · {1}',ja:'字幕{0}件を適用 · {1}',en:'Attached {0} subtitles · {1}'},
+  '자막 {0}개를 붙였습니다':{zh:'已附加 {0} 条字幕',ja:'字幕{0}件を適用しました',en:'Attached {0} subtitles'},
+  '자막을 붙이지 못했습니다 — {0}':{zh:'未能附加字幕 — {0}',ja:'字幕を適用できませんでした — {0}',en:'Could not attach subtitles — {0}'},
+  '음원 {0}개 — 시간이 걸립니다':{zh:'{0} 个音频 — 需要一些时间',ja:'音源{0}件 — 時間がかかります',en:'{0} audio files — this may take a while'},
+  '이미 최신 버전입니다 ({0})':{zh:'已是最新版本（{0}）',ja:'すでに最新バージョンです（{0}）',en:'Already up to date ({0})'},
+  'srt·vtt 아님 {0}':{zh:'非 srt·vtt {0}',ja:'srt·vtt以外 {0}',en:'not srt/vtt {0}'},
+  '읽지 못함 {0}':{zh:'无法读取 {0}',ja:'読み込み失敗 {0}',en:'unreadable {0}'},
+  '짝 없는 자막 {0}':{zh:'无配对字幕 {0}',ja:'相手のない字幕 {0}',en:'unmatched subtitles {0}'},
+  '시각이 음원 밖 {0}':{zh:'时间超出音频 {0}',ja:'時刻が音源の範囲外 {0}',en:'timing outside audio {0}'},
+  '자막 없는 음원 {0}':{zh:'无字幕的音频 {0}',ja:'字幕のない音源 {0}',en:'audio without subtitles {0}'},
+  '기본 방식으로 되돌렸습니다':{zh:'已恢复默认播放方式',ja:'既定の方式に戻しました',en:'Restored the default engine'},
+  '대본 5줄을 기본값으로 되돌렸습니다':{zh:'五行课文已恢复默认',ja:'5行スクリプトを既定に戻しました',en:'Reset the 5 lines to defaults'},
+  '대본이 있는 파일은 문장 경계가 고정되어 있습니다':{zh:'带课文的文件句子边界已固定',ja:'スクリプト付きファイルは文の境界が固定です',en:'Files with a script have fixed sentence bounds'},
+  '마지막 문장입니다':{zh:'已是最后一句',ja:'最後の文です',en:'This is the last sentence'},
+  '먼저 음원을 불러오세요':{zh:'请先导入音频',ja:'先に音源を読み込んでください',en:'Import audio first'},
+  '먼저 파일을 불러오세요':{zh:'请先导入文件',ja:'先にファイルを読み込んでください',en:'Import a file first'},
+  '멈춘 상태에서만 위치를 옮길 수 있습니다':{zh:'仅在暂停时可移动位置',ja:'停止中のみ位置を移動できます',en:'Position can be moved only while paused'},
+  '모두 지웠습니다':{zh:'已全部删除',ja:'すべて削除しました',en:'All deleted'},
+  '모든 문장이 건너뛰기로 표시돼 있습니다':{zh:'所有句子都被标记为跳过',ja:'すべての文がスキップ指定です',en:'Every sentence is marked to skip'},
+  '무한 반복 중입니다. 다음 파일로 가려면 반복 버튼을 바꾸세요':{zh:'正在无限循环。要切换文件请更改循环按钮',ja:'無限リピート中です。次のファイルへはリピートボタンを変更',en:'Looping forever. Change the repeat button to advance files'},
+  '불러온 파일이 없습니다':{zh:'没有已导入的文件',ja:'読み込んだファイルがありません',en:'No files imported'},
+  '브라우저가 소리를 막았습니다. 화면을 한 번 탭한 뒤 다시 눌러 주세요':{zh:'浏览器拦截了声音。请先点一下屏幕再试',ja:'ブラウザが音を止めました。画面を一度タップしてからもう一度',en:'The browser blocked audio. Tap the screen once, then try again'},
+  '새 버전 확인 중…':{zh:'正在检查新版本…',ja:'新バージョンを確認中…',en:'Checking for updates…'},
+  '새 버전을 받는 중입니다 — 곧 자동으로 다시 열립니다':{zh:'正在下载新版本 — 稍后自动重新打开',ja:'新バージョンを取得中 — まもなく自動で再起動します',en:'Downloading the update — the app will reopen shortly'},
+  '앞선 파일을 읽는 중입니다':{zh:'正在读取前面的文件',ja:'先のファイルを読み込み中です',en:'Still reading earlier files'},
+  '음원 파일이 아닙니다':{zh:'不是音频文件',ja:'音源ファイルではありません',en:'Not an audio file'},
+  '이 문장에는 구 정보가 없습니다':{zh:'此句没有短语信息',ja:'この文には句の情報がありません',en:'This sentence has no phrase info'},
+  '이 문장에는 단어 정보가 없습니다':{zh:'此句没有词语信息',ja:'この文には単語の情報がありません',en:'This sentence has no word info'},
+  '이 실행 방식에서는 확인할 수 없습니다':{zh:'当前运行方式下无法检查',ja:'この実行方式では確認できません',en:'Cannot check in this launch mode'},
+  '이 파일은 재생할 수 없습니다':{zh:'无法播放此文件',ja:'このファイルは再生できません',en:'Cannot play this file'},
+  '이미 불러온 팩입니다':{zh:'该课程包已导入',ja:'すでに読み込んだパックです',en:'Pack already loaded'},
+  '이미 처음입니다':{zh:'已经在开头',ja:'すでに先頭です',en:'Already at the start'},
+  '자막을 껐습니다 — 자동 분할로 돌아갑니다':{zh:'已关闭字幕 — 返回自动分句',ja:'字幕をオフ — 自動分割に戻ります',en:'Subtitles off — back to auto-split'},
+  '자막이 문장 경계입니다 — 끄면 자동 분할로 돌아갑니다':{zh:'字幕即句子边界 — 关闭后返回自动分句',ja:'字幕が文の境界です — オフで自動分割に戻ります',en:'Subtitles define sentence bounds — turn off to auto-split'},
+  '재생할 수 없습니다':{zh:'无法播放',ja:'再生できません',en:'Cannot play'},
+  '저장 공간이 부족합니다. 파일을 지워 주세요':{zh:'存储空间不足，请删除文件',ja:'保存領域が不足しています。ファイルを削除してください',en:'Out of storage. Delete some files'},
+  '처음부터':{zh:'从头开始',ja:'最初から',en:'From the start'},
+  '팩을 읽지 못했습니다 — 웹서버로 열었는지 확인하세요':{zh:'无法读取课程包 — 请确认是否通过网页服务器打开',ja:'パックを読めませんでした — Webサーバー経由か確認してください',en:'Could not read the pack — check it is served over a web server'},
+  '폴더 안에 음원이 없습니다':{zh:'文件夹内没有音频',ja:'フォルダに音源がありません',en:'No audio in the folder'},
+  '한 번 더 누르면 자막을 끕니다':{zh:'再按一次将关闭字幕',ja:'もう一度押すと字幕をオフにします',en:'Press again to turn subtitles off'},
+  '확인하지 못했습니다 — 인터넷 연결을 확인하세요':{zh:'检查失败 — 请确认网络连接',ja:'確認できませんでした — ネット接続を確認してください',en:'Check failed — verify your internet connection'},
+
   '📁 폴더째 가져오기':{zh:'📁 整个文件夹导入',ja:'📁 フォルダごと取り込み',en:'📁 Import a whole folder'},
   '폴더 안의 음원을 전부 불러옵니다':{zh:'导入文件夹内的全部音频',ja:'フォルダ内の音源をすべて読み込みます',en:'Loads every audio file in the folder'},
   '🎵 파일 골라 가져오기':{zh:'🎵 挑选文件导入',ja:'🎵 ファイルを選んで取り込み',en:'🎵 Pick files to import'},
@@ -3247,15 +3320,25 @@ window.addEventListener('pagehide', flushSaves);
 
   function trS(ko){ if(uiLang==='ko') return ko; const e=TR[ko]; return (e&&e[uiLang])||ko; }
   window.__trS = trS;
-  let refreshInst = null;                 /* PWA 부에서 채운다 */
+  /* 숫자·파일명이 끼는 문구: TR 키에 {0}{1} 자리를 두고 채워 넣는다 */
+  function trN(k){ let t=trS(k); for(let i=1;i<arguments.length;i++) t=t.split('{'+(i-1)+'}').join(arguments[i]); return t; }
+  window.__trN = trN;
+  let refreshInst = null;
   function mlabTxt(k,off){ return MLAB_ML[uiLang][k] + (off?OFF_ML[uiLang]:''); }
   function mdescTxt(m){ return MDESC_ML[uiLang][m]; }
   function hintTxt(m){ return HINT_ML[uiLang][m==='custom'?'custom':'locked']; }
 
   /* 시트를 매번 다시 걷는다 — 팩 로더 등이 텍스트 노드를 갈아치워도 항상 잡힌다.
      각 노드의 한국어 원문은 노드 자신에 기억시킨다 (첫 방문 시). */
+  /* 번역 제외: 학습 콘텐츠(대본 5줄·자막 띠)·파일 목록·휠(파일명)·토스트(동적 처리) */
+  const I18N_SKIP = ['ltabWrap','lines','wCap','fList','wheelWrap','toast'];
   function applyUiLang(){
-    const w=document.createTreeWalker(document.getElementById('shSet'), NodeFilter.SHOW_TEXT);
+    const w=document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, {
+      acceptNode(t){
+        for(let e=t.parentElement; e; e=e.parentElement)
+          if(e.id && I18N_SKIP.includes(e.id)) return NodeFilter.FILTER_REJECT;
+        return NodeFilter.FILTER_ACCEPT;
+      }});
     let n;
     while(n=w.nextNode()){
       const koSrc = n.__ko !== undefined ? n.__ko : n.nodeValue;
@@ -3269,6 +3352,8 @@ window.addEventListener('pagehide', flushSaves);
     if(window.__refreshSetVals) __refreshSetVals();
     if(window.updateEngineText) updateEngineText();
     if(refreshInst) refreshInst();
+    try{ if(window.updateMeta) updateMeta(); }catch(e){}      /* 정보 줄(문장 n초) 즉시 갱신 */
+    try{ if(window.renderFileList) renderFileList(); }catch(e){}  /* 파일 목록 라벨 즉시 갱신 */
     renderCards(); renderModeUI();
   }
   document.getElementById('bLang').onclick = ()=>{
@@ -3793,6 +3878,8 @@ window.addEventListener('pagehide', flushSaves);
   /* 긴 안내는 2.1초 만에 사라지면 읽을 수가 없다. 길이에 맞춰 더 띄운다. */
   const _toast = toast;
   toast = function(msg){
+    if(typeof msg === 'string' && window.__trS) msg = __trS(msg);
+    arguments[0] = msg;
     _toast.apply(this, arguments);
     const s = String(msg == null ? '' : msg);
     if(s.length > 34){
@@ -3875,7 +3962,7 @@ window.addEventListener('pagehide', flushSaves);
       return;
     }
     if(!auds.length){
-      if(alien.length){ toast('아직 못 읽는 자막 형식입니다 (srt·vtt만 됩니다): ' + alien[0]); return; }
+      if(alien.length){ toast(trN('아직 못 읽는 자막 형식입니다 (srt·vtt만 됩니다): {0}', alien[0])); return; }
       return _importFiles.call(this, all);              // 원래 안내 그대로
     }
 
@@ -3904,16 +3991,16 @@ window.addEventListener('pagehide', flushSaves);
        사용자는 파일 문제인지 앱 문제인지 알 길이 없다. */
     const few = a => a.slice(0, 2).join(', ') + (a.length > 2 ? ' 외 ' + (a.length - 2) + '개' : '');
     const why = [];
-    if(r.alien && r.alien.length)     why.push('srt·vtt 아님 ' + few(r.alien));
-    if(r.unread && r.unread.length)   why.push('읽지 못함 ' + few(r.unread));
-    if(r.orphan && r.orphan.length)   why.push('짝 없는 자막 ' + few(r.orphan));
-    if(r.tooShort && r.tooShort.length) why.push('시각이 음원 밖 ' + few(r.tooShort));
-    if(r.noSub && r.noSub.length)     why.push('자막 없는 음원 ' + few(r.noSub));
+    if(r.alien && r.alien.length)     why.push(trN('srt·vtt 아님 {0}', few(r.alien)));
+    if(r.unread && r.unread.length)   why.push(trN('읽지 못함 {0}', few(r.unread)));
+    if(r.orphan && r.orphan.length)   why.push(trN('짝 없는 자막 {0}', few(r.orphan)));
+    if(r.tooShort && r.tooShort.length) why.push(trN('시각이 음원 밖 {0}', few(r.tooShort)));
+    if(r.noSub && r.noSub.length)     why.push(trN('자막 없는 음원 {0}', few(r.noSub)));
     if(why.length) console.warn('자막 붙이기 결과 —', { 붙임: r.n, ...r });
 
-    if(r.n && why.length)      toast('자막 ' + r.n + '개 붙임 · ' + why.join(' · '));
-    else if(r.n)               toast('자막 ' + r.n + '개를 붙였습니다');
-    else if(why.length)        toast('자막을 붙이지 못했습니다 — ' + why.join(' · '));
+    if(r.n && why.length)      toast(trN('자막 {0}개 붙임 · {1}', r.n, why.join(' · ')));
+    else if(r.n)               toast(trN('자막 {0}개를 붙였습니다', r.n));
+    else if(why.length)        toast(trN('자막을 붙이지 못했습니다 — {0}', why.join(' · ')));
   }
 
   /* ---------- 폴더째 열기 ---------- */
@@ -3928,7 +4015,7 @@ window.addEventListener('pagehide', flushSaves);
                                 /audio|\.mp3$|\.m4a$|\.wav$|\.ogg$/i.test(f.type + f.name));
     /* 자막만 든 폴더도 받는다 — 음원을 먼저 넣고 자막 폴더를 나중에 여는 사용법. */
     if(!auds.length && !subs.length){ toast('폴더 안에 음원이 없습니다'); return; }
-    if(auds.length > 80) toast('음원 ' + auds.length + '개 — 시간이 걸립니다');
+    if(auds.length > 80) toast(trN('음원 {0}개 — 시간이 걸립니다', auds.length));
     importFiles(fl);
   };
 
@@ -4018,9 +4105,9 @@ window.addEventListener('pagehide', flushSaves);
           return;
         }
         const sub = el.querySelector('.sub');
-        if(sub) sub.textContent += ' · 자막 ' + f.srt.cues.length + '줄';
+        if(sub) sub.textContent += ' · ' + trN('자막 {0}줄', f.srt.cues.length);
         const b = document.createElement('button');
-        b.className = 'subchip'; b.textContent = '자막 끄기';
+        b.className = 'subchip'; b.textContent = trS('자막 끄기');
         b.onclick = ev => {
           ev.stopPropagation();
           if(subArm !== f.id){
@@ -4068,7 +4155,7 @@ window.addEventListener('pagehide', flushSaves);
     if(reg.installing || reg.waiting)
       toast('새 버전을 받는 중입니다 — 곧 자동으로 다시 열립니다');
     else
-      toast('이미 최신 버전입니다 (' + APP_VERSION + ')');
+      toast(trN('이미 최신 버전입니다 ({0})', APP_VERSION));
   };
 
   /* ---------- 시작 ---------- */
