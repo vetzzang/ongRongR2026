@@ -1761,6 +1761,35 @@ function startGap(c){
 }
 function clearGap(){ if(S.gapT) clearTimeout(S.gapT); S.gapT=null; S.inGap=false; $('#gapBadge').classList.remove('on'); }
 
+/* ===== 화면 꺼짐 대비 감시자 =====
+   화면이 꺼지면 requestAnimationFrame 이 멈춰 문장 경계 감시가 사라진다.
+   그동안은 setInterval + timeupdate 로 감시를 이어받는다.
+   document.hidden 일 때만 동작 — rAF 와 이중 발화(반복 이중 카운트)를 원천 차단. */
+const BG = { iv:null, to:null };
+function bgCheck(){
+  if(!document.hidden) return;                 /* 화면이 켜지면 rAF(tick)가 담당 */
+  if(S.cur<0 || !S.sent.length) return;
+  if(!S.playing || P.paused() || S.inGap) return;
+  const t = P.time(), c = S.sent[S.si];
+  if(t >= c.e - 0.012){ onEnd(); return; }
+  if(t < c.s - 0.30){ const k=findSentence(t); if(k!==S.si){ S.si=k; S.reps=0; } }
+  const remain = (c.e - 0.012 - t) / S.speed * 1000;   /* 경계 근접 시 정밀 보정 */
+  if(remain < 900){
+    if(BG.to) clearTimeout(BG.to);
+    BG.to = setTimeout(bgCheck, Math.max(40, remain));
+  }
+}
+function bgStart(){
+  if(BG.iv) return;
+  BG.iv = setInterval(bgCheck, 250);
+  au.addEventListener('timeupdate', bgCheck);
+}
+function bgStop(){
+  if(BG.iv){ clearInterval(BG.iv); BG.iv=null; }
+  if(BG.to){ clearTimeout(BG.to); BG.to=null; }
+  au.removeEventListener('timeupdate', bgCheck);
+}
+
 /* 화면 프레임마다 위치 확인 (약 16ms 간격 → 문장 끝 오차가 매우 작음) */
 function tick(){
   requestAnimationFrame(tick);
@@ -2542,8 +2571,8 @@ window.addEventListener('drop', e=>{ if(e.dataTransfer.files.length) importFiles
 /* ===== 새 버전 알림 =====
    GitHub에 새 index.html 을 올리면, 앱이 알아채고 아래에 알림을 띄운다.
    누르면 캐시를 비우고 새로 받는다. 불러온 음원과 설정은 그대로 남는다. */
-const APP_VERSION = 'v2.0.1';
-const APP_DATE = '2026-09-06';
+const APP_VERSION = 'v2.1.0';
+const APP_DATE = '2026-09-07';
 let verChecked = 0;
 
 async function checkUpdate(){
@@ -2568,8 +2597,8 @@ $('#nvGo').onclick = async ()=>{
 };
 
 document.addEventListener('visibilitychange', ()=>{
-  if(document.hidden) flushSaves();          /* 앱을 내릴 때 미뤄둔 저장을 마무리 */
-  else checkUpdate();
+  if(document.hidden){ flushSaves(); bgStart(); }   /* 저장 마무리 + 경계 감시 교대 */
+  else { bgStop(); updateMeta(); paintAll(); checkUpdate(); }
 });
 window.addEventListener('pagehide', flushSaves);
 
