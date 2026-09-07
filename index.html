@@ -456,9 +456,14 @@
     #stage{min-height:124px}
   }
   /* ── 가로 분할(태블릿 전용): 메인 3/4 그대로 + 측면 1/4 = NEXT·휠 (2026-09-07 확정) ── */
-  #bSwap{display:none;position:absolute;top:8px;right:8px;z-index:5;width:38px;height:34px;
-    border:0;border-radius:9px;background:#222c3d;color:#c7d0dc;font-size:17px;line-height:1}
+  #bSwap{display:none}                                  /* 세로에서는 숨김 — 가로 전용 버튼 */
+  #bSwap .arR,#bSwap .arL{stroke:var(--dim)}
+  #bSwap.sR .arR{stroke:var(--green)}                    /* 측면 열 오른쪽 = → 녹색 */
+  #bSwap.sL .arL{stroke:var(--green)}                    /* 측면 열 왼쪽  = ← 녹색 */
   @media (orientation:landscape) and (min-width:900px){
+    #bSwap{display:grid}
+    /* 가로 분할에서는 메인 열이 3/4 폭을 꽉 채운다 — 820 캡은 세로·1단 전용 */
+    .bar,.waves,.meta,#lines,#wheelWrap{max-width:none}
     #app{display:grid;column-gap:12px;
       grid-template-columns:minmax(0,3fr) minmax(0,1fr);
       grid-template-rows:auto auto minmax(0,1fr) auto;
@@ -469,7 +474,6 @@
     #lines{grid-area:lines;overflow-y:auto;min-height:0}
     #stage{grid-area:stage;min-height:0;height:auto;margin:6px 0 0}
     #wheelWrap{grid-area:wheel;align-self:end}
-    #bSwap{display:flex;align-items:center;justify-content:center}
   }
 
 </style>
@@ -493,6 +497,7 @@
       <b class="mono" id="spdTxt">1x</b>
       <button id="bFast" aria-label="빠르게"><svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg></button>
     </div>
+    <button class="tb" id="bSwap" aria-label="측면 열 좌우 전환"><svg viewBox="0 0 24 24"><g class="arR"><path d="M5 5h13"/><path d="M14.5 2l4 3-4 3"/></g><g class="arL"><path d="M19 19H6"/><path d="M9.5 16l-4 3 4 3"/></g></svg></button>
     <button class="tb" id="bSet" aria-label="설정"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-1.8-.3 1.6 1.6 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1A1.6 1.6 0 0 0 9 19.4a1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0 .3-1.8 1.6 1.6 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1A1.6 1.6 0 0 0 4.6 9a1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 1.8.3H9a1.6 1.6 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 1 1.5 1.6 1.6 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8V9a1.6 1.6 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1z"/></svg></button>
   </div>
 
@@ -522,7 +527,6 @@
     <div id="gapBadge">따라 말하세요…</div>
     <div id="empty">폴더 버튼을 눌러<br>MP3 파일을 불러오세요</div>
     <button id="next">NEXT</button>
-    <button id="bSwap" title="좌우 전환" aria-label="측면 열 좌우 전환">⇄</button>
   </div>
 
   <div id="wheelWrap"><div id="wheel"><div id="wheelInner"></div></div></div>
@@ -2601,7 +2605,7 @@ window.addEventListener('drop', e=>{ if(e.dataTransfer.files.length) importFiles
 /* ===== 새 버전 알림 =====
    GitHub에 새 index.html 을 올리면, 앱이 알아채고 아래에 알림을 띄운다.
    누르면 캐시를 비우고 새로 받는다. 불러온 음원과 설정은 그대로 남는다. */
-const APP_VERSION = 'v2.3.0';
+const APP_VERSION = 'v2.3.2';
 const APP_DATE = '2026-09-07';
 let verChecked = 0;
 
@@ -4274,12 +4278,16 @@ window.addEventListener('pagehide', flushSaves);
   if(!app||!b) return;
   var side="r"; try{ side=localStorage.getItem("ongal_side")||"r"; }catch(e){}
   if(side==="l") app.classList.add("sideL");
+  function paintSwap(){ var l=app.classList.contains("sideL");
+    b.classList.toggle("sL",l); b.classList.toggle("sR",!l); }
+  paintSwap();
   ["pointerdown","touchstart","mousedown"].forEach(function(t){
     b.addEventListener(t,function(e){ e.stopPropagation(); },{passive:true});
   });
   b.addEventListener("click",function(e){
     e.stopPropagation();
     var l=app.classList.toggle("sideL");
+    paintSwap();
     try{ localStorage.setItem("ongal_side", l?"l":"r"); }catch(err){}
     try{ window.dispatchEvent(new Event("resize")); }catch(err){}
   });
