@@ -25,6 +25,8 @@
     --danger:#e2686d;
     --safeb: env(safe-area-inset-bottom, 0px);
     --safet: env(safe-area-inset-top, 0px);
+    --safel: env(safe-area-inset-left, 0px);
+    --safer: env(safe-area-inset-right, 0px);
   }
   *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
   html,body{margin:0;height:100%;overflow:hidden;overscroll-behavior:none;}
@@ -47,7 +49,7 @@
   #splash p{margin:0;color:var(--dim);font-size:13px}
 
   /* ---------- layout ---------- */
-  #app{height:100%;display:flex;flex-direction:column;padding-top:var(--safet);}
+  #app{height:100%;display:flex;flex-direction:column;padding-top:var(--safet);padding-left:var(--safel);padding-right:var(--safer);}
 
   /* toolbar */
   .bar{display:flex;gap:8px;align-items:center;justify-content:space-between;padding:10px 12px 8px;}
@@ -206,7 +208,7 @@
 
   /* ---------- overlay screens ---------- */
   .sheet{position:fixed;inset:0;background:var(--bg);z-index:40;display:none;flex-direction:column;
-    padding-top:var(--safet)}
+    padding-top:var(--safet);padding-left:var(--safel);padding-right:var(--safer)}
   .sheet.open{display:flex}
   .shead{display:flex;align-items:center;padding:10px 12px;gap:8px}
   .shead h2{flex:1;text-align:center;margin:0;font-size:17px;font-weight:700}
@@ -426,7 +428,7 @@
     /* body가 height:100% 스크롤 컨테이너가 되면 window 스크롤이 안 먹어
        NEXT·휠에 영영 못 내려간다 — 문서 자체가 자라나게 한다 */
     html,body{height:auto;min-height:100%;overflow:auto}
-    #app{height:auto;min-height:100vh}
+    #app{height:auto;min-height:100vh;min-height:100dvh}
   }
 
   /* ═══ 태블릿 — 1단 유지, 폭·크기만 키운다 ═══ */
@@ -2571,7 +2573,7 @@ window.addEventListener('drop', e=>{ if(e.dataTransfer.files.length) importFiles
 /* ===== 새 버전 알림 =====
    GitHub에 새 index.html 을 올리면, 앱이 알아채고 아래에 알림을 띄운다.
    누르면 캐시를 비우고 새로 받는다. 불러온 음원과 설정은 그대로 남는다. */
-const APP_VERSION = 'v2.1.0';
+const APP_VERSION = 'v2.1.1';
 const APP_DATE = '2026-09-07';
 let verChecked = 0;
 
@@ -2641,8 +2643,12 @@ window.addEventListener('pagehide', flushSaves);
 
   setTimeout(()=>{ window.place && window.place(); },0);
   requestAnimationFrame(tick);
-  new ResizeObserver(()=>{ cache={over:null,zoom:null,rhy:null,key:''}; window.place&&window.place(); paintAll(); })
-    .observe($('#stage'));
+  { /* 뷰포트 폭 변화(폴더블 접힘/펼침 포함)를 #stage 폭에만 기대지 않도록
+       파형 컨테이너(.waves)도 함께 관찰한다 — 레이아웃이 바뀌어도 재그리기가 살아남는다 */
+    const _ro = new ResizeObserver(()=>{ cache={over:null,zoom:null,rhy:null,key:''}; window.place&&window.place(); paintAll(); });
+    _ro.observe($('#stage'));
+    const _wv = document.querySelector('.waves'); if(_wv) _ro.observe(_wv);
+  }
 
   /* 모바일 브라우저는 첫 터치 전까지 소리를 잠가 둔다 */
   window.addEventListener('pointerdown', ()=>{
