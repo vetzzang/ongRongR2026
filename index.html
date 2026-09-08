@@ -455,12 +455,13 @@
     #wOver{height:44px} #wZoom{height:44px} #wRhy{height:66px}
     #stage{min-height:124px}
   }
-  /* ── 가로 분할(태블릿 전용): 메인 3/4 그대로 + 측면 1/4 = NEXT·휠 (2026-09-07 확정) ── */
+  /* ── 가로 분할(태블릿·폰 공통): 메인 3/4 그대로 + 측면 1/4 = NEXT·휠 (2026-09-07 확정)
+     2026-09-08: 폰 가로보기도 같은 분할을 쓴다 — 발동 조건 900px → 640px ── */
   #bSwap{display:none}                                  /* 세로에서는 숨김 — 가로 전용 버튼 */
   #bSwap .arR,#bSwap .arL{stroke:var(--dim)}
   #bSwap.sR .arR{stroke:var(--green)}                    /* 측면 열 오른쪽 = → 녹색 */
   #bSwap.sL .arL{stroke:var(--green)}                    /* 측면 열 왼쪽  = ← 녹색 */
-  @media (orientation:landscape) and (min-width:900px){
+  @media (orientation:landscape) and (min-width:640px){
     #bSwap{display:grid}
     /* 가로 분할에서는 메인 열이 3/4 폭을 꽉 채운다 — 820 캡은 세로·1단 전용 */
     .bar,.waves,.meta,#lines,#wheelWrap{max-width:none}
@@ -474,6 +475,26 @@
     #lines{grid-area:lines;overflow-y:auto;min-height:0}
     #stage{grid-area:stage;min-height:0;height:auto;margin:6px 0 0}
     #wheelWrap{grid-area:wheel;align-self:end}
+  }
+  /* 폰 가로: 세로가 아주 낮다(≤480px). 분할·기능은 태블릿과 동일, 크기만 압축한다. */
+  @media (orientation:landscape) and (min-width:640px) and (max-height:480px){
+    .bar{padding:4px var(--gx) 4px}
+    .tb{width:40px;height:40px;min-width:40px}
+    .spd{height:40px}
+    #wOver,#wZoom{height:32px}
+    #wRhy{height:46px}
+    .wrap+.wrap,.meta+.wrap{margin-top:3px}
+    .meta{padding:4px 10px 0}
+    #wCap{padding:3px 8px}
+    #capTx .cl{font-size:12.5px}
+    #lines{padding:2px 0}
+    #lbox{--lgap:4px}
+    #next{width:92px;height:92px;font-size:15px}
+    #wheel{height:80px;
+      -webkit-mask-image:linear-gradient(180deg,transparent 0,#000 30%,#000 70%,transparent 100%);
+      mask-image:linear-gradient(180deg,transparent 0,#000 30%,#000 70%,transparent 100%)}
+    #wheelInner{padding:20px 0}
+    #wheelWrap{padding:0 var(--gx) calc(3px + var(--safeb))}
   }
 
 </style>
@@ -2605,8 +2626,8 @@ window.addEventListener('drop', e=>{ if(e.dataTransfer.files.length) importFiles
 /* ===== 새 버전 알림 =====
    GitHub에 새 index.html 을 올리면, 앱이 알아채고 아래에 알림을 띄운다.
    누르면 캐시를 비우고 새로 받는다. 불러온 음원과 설정은 그대로 남는다. */
-const APP_VERSION = 'v2.3.2';
-const APP_DATE = '2026-09-07';
+const APP_VERSION = 'v2.4.0';
+const APP_DATE = '2026-09-08';
 let verChecked = 0;
 
 async function checkUpdate(){
